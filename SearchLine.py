@@ -23,7 +23,6 @@ SearchLine_v0.1.py
 Now it gives the option to use the continuum image to mask continuum sources.
 
 ---------------------------------------------------------------------------------------------
-SearchLine.py
 v0.2
 Updated documentation and changed the naming convention where the version will be in the header.
 

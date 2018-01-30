@@ -1,5 +1,5 @@
-import warnings
-warnings.filterwarnings("ignore")
+# import warnings
+# warnings.filterwarnings("ignore")
 import numpy as np
 import astropy.io.fits as fits
 import os
@@ -9,12 +9,12 @@ import os.path
 
 '''
 
-USAGE: "python SearchLine_v0.py -h" will give a description of the input values
+USAGE: "python SearchLine_vXX.py -h" will give a description of the input values
 
 Changelog:
 ---------------------------------------------------------------------------------------------
 SearchLine_v0.py
-Script that search emission lines fatures. 
+Script that search emission lines features. 
 
 ---------------------------------------------------------------------------------------------
 SearchLine_v0.1.py
@@ -146,7 +146,7 @@ def main():
     ChannelSpacing = Header['CDELT3']
     ApproxChannelVelocityWidth = ( abs(ChannelSpacing)/RefFrequency ) * 3e5
     ApproxMaxSigmas = int ((1000.0/ApproxChannelVelocityWidth) / 2.35)
-    print '*** MaxSigmas should be of the order of ',ApproxMaxSigmas,'to detect a line width FWHM ~ 1000 km/s ***'
+    print '*** MaxSigmas should be of the order of ',ApproxMaxSigmas,'to detect a line width FWHM ~ 1000 km/s (considering the reference frequency CRVAL3)***'
     
     # Main loop to do the search
     for sigmas in range(args.MaxSigmas):

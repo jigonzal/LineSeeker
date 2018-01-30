@@ -1,5 +1,5 @@
-import warnings
-warnings.filterwarnings("ignore")
+# import warnings
+# warnings.filterwarnings("ignore")
 import numpy as np
 import astropy.io.fits as fits
 import os
@@ -9,14 +9,17 @@ import os.path
 from astropy.convolution import convolve,convolve_fft,Kernel2D
 from astropy.modeling import models, fitting
 import matplotlib.pyplot as plt
-import psutil
-pid = os.getpid()
-py = psutil.Process(pid)
-memoryUse = py.memory_info()[0]/2.**30  # memory use in GB...I think
-print 'memory use:', memoryUse
+# import psutil
+# pid = os.getpid()
+# py = psutil.Process(pid)
+# memoryUse = py.memory_info()[0]/2.**30  # memory use in GB...I think
+# print 'memory use:', memoryUse
 '''
 
-USAGE: "python SimulateCubeSearch_v0.1.py -h" will give a description of the input values
+USAGE: "python SimulateCubeSearch.py -h" will give a description of the input values
+
+python SimulateCubeSearch.py -Cube cube.fits -MaxSigmas 10 -MinSN 3.5 -OutputPath Simulation1 -UseMask True -ContinuumImage continuum.fits -MaskSN 5.0
+
 
 Changelog:
 ---------------------------------------------------------------------------------------------
@@ -24,6 +27,7 @@ SimulateCubeSearch_v0.py
 Script that creates simulated cubes given a real one and searches for emisison lines in the noise pure data.
 This version works with SearchLine+v0.1.py
 python SimulateCubeSearch_v0.py -Cube spw1_w4.fits -UseMask True -ContinuumImage ContinuumLESS1_v2.fits -MaxSigmas 10 -MinSN 3.5 -OutputPath Simulation1 -MaskSN 5.0
+---------------------------------------------------------------------------------------------
 
 SimulateCubeSearch_v0.1.py
 Script that creates simulated cubes given a real one and searches for emisison lines in the noise pure data.
@@ -31,16 +35,24 @@ This version works with SearchLine+v0.1.py
 Not the kernel for the beam convolution has a smaller size that is always down to 3 times the sigma of the Gaussian beam.
 Now it accepts cubes with one single beam size.
 python SimulateCubeSearch_v0.1.py -Cube spw1_w4.fits -UseMask True -ContinuumImage ContinuumLESS1_v2.fits -MaxSigmas 10 -MinSN 3.5 -OutputPath Simulation1 -MaskSN 5.0
+---------------------------------------------------------------------------------------------
 
 SimulateCubeSearch_v0.2.py
 small changes made to try to improve memory usage.
 python SimulateCubeSearch_v0.2.py -Cube spw1_w4.fits -UseMask True -ContinuumImage ContinuumLESS1_v2.fits -MaxSigmas 10 -MinSN 3.5 -OutputPath Simulation1 -MaskSN 5.0
+---------------------------------------------------------------------------------------------
+
+v0.3
+SimulateCubeSearch.py
+Updated documentation and changed the naming convention where the version will be in the header.
+Remove printing of memory usage
+---------------------------------------------------------------------------------------------
 
 '''
 
 def SimulateCube(CubePath):
-    memoryUse = py.memory_info()[0]/2.**30  # memory use in GB...I think
-    print 'memory use:', memoryUse
+#     memoryUse = py.memory_info()[0]/2.**30  # memory use in GB...I think
+#     print 'memory use:', memoryUse
     print 100*'#'
     print 'Creating Simulated Cube...'
     hdulist =   fits.open(CubePath,memmap=True)
@@ -104,16 +116,16 @@ def SimulateCube(CubePath):
     hdulist.close()
     hdulist = None
     data = None
-    memoryUse = py.memory_info()[0]/2.**30  # memory use in GB...I think
-    print 'memory use:', memoryUse	
+#     memoryUse = py.memory_info()[0]/2.**30  # memory use in GB...I think
+#     print 'memory use:', memoryUse	
     RandomNoiseCube = None
     # return RandomNoiseCube
     return RandomNoiseCube
 
 
 def SearchLine(FolderForLinesFiles,MinSN,sigmas,UseMask,ContinuumImage,MaskSN):
-    memoryUse = py.memory_info()[0]/2.**30  # memory use in GB...I think
-    print 'memory use:', memoryUse	
+#     memoryUse = py.memory_info()[0]/2.**30  # memory use in GB...I think
+#     print 'memory use:', memoryUse	
     SN = np.array([])
     SNneg = np.array([])
 
@@ -160,8 +172,8 @@ def SearchLine(FolderForLinesFiles,MinSN,sigmas,UseMask,ContinuumImage,MaskSN):
       sn_linecandidates_neg.write(str(pix1[k])+' '+str(pix3[k])+' '+str(pix2[k])+' SN:'+str(data[pix1[k],pix2[k],pix3[k]])+'\n')
     sn_linecandidates_neg.close()
     data = 0
-    memoryUse = py.memory_info()[0]/2.**30  # memory use in GB...I think
-    print 'memory use:', memoryUse	
+#     memoryUse = py.memory_info()[0]/2.**30  # memory use in GB...I think
+#     print 'memory use:', memoryUse	
     return
 
 def main():

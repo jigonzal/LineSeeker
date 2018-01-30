@@ -1,19 +1,31 @@
-import matplotlib as mpl
-mpl.use('Agg')
-import warnings
-from matplotlib import rcParams
-rcParams.update({'figure.autolayout': True})
-warnings.filterwarnings("ignore")
+#Change matplotlib backend to use Agg so it can run without a X server in a linux machine with Centos <7.
+try:
+	import matplotlib as mpl
+	mpl.use('Agg')
+except:
+	print 'Problem using Agg backend'
+# import warnings
+# warnings.filterwarnings("ignore")
+
+# from matplotlib import rcParams
+# rcParams.update({'figure.autolayout': True})
+
 import numpy as np
 import glob
 import matplotlib.pyplot as plt
 from sklearn.cluster import DBSCAN
-import seaborn as sns
-sns.set_style("white", {'legend.frameon': True})
-sns.set_style("ticks", {'legend.frameon': True})
-sns.set_context("talk")
-sns.set_palette('Dark2', 8,desat=1)
-cc = sns.color_palette()
+
+#Try to import seaborn and adjust the parameters of the output plots
+try:
+	import seaborn as sns
+	sns.set_style("white", {'legend.frameon': True})
+	sns.set_style("ticks", {'legend.frameon': True})
+	sns.set_context("talk")
+	sns.set_palette('Dark2', 8,desat=1)
+	cc = sns.color_palette()
+except:
+	print 'No seaborn package installed'
+	cc = ['red','blue','green','orange','magenta','black']
 import argparse
 import astropy.io.fits as fits
 from astropy import wcs
@@ -25,18 +37,22 @@ from scipy.optimize import curve_fit
 
 USAGE: "python GetLineCandidates.py -h" will give a description of the input values
 
+python GetLineCandidates.py -Cube cube.fits -MaxSigmas 10 -MinSN 3.5 -LineSearchPath LineSearchTEST1 -SimulationPath Simulation1 -SurveyName Survey -Wavelength 3
+
 Changelog:
 ---------------------------------------------------------------------------------------------
 GetLineCandidates.py
 Script that finds the emission lines position in the files created by 
 This version works with SearchLine+v0.1.py
 python GetLineCandidates.py -Cube spw1_w4.fits -LineSearchPath LineSearchTEST1 -MaxSigmas 10 -MinSN 3.5 -SimulationPath Simulation1 
+---------------------------------------------------------------------------------------------
 
 GetLineCandidates_v0.1.py
 Script that finds the emission lines position in the files created by 
 This version works with SearchLine.v0.1.py
 This version returns all the lines with SN higher than MinSN, previously was only returning those with P<1
 python GetLineCandidates_v0.1.py -Cube spw1_w4.fits -LineSearchPath LineSearchTEST1 -MaxSigmas 10 -MinSN 3.5 -SimulationPath Simulation1 
+---------------------------------------------------------------------------------------------
 
 GetLineCandidates_v0.2.py
 Now it gives the output even when no Simulations are available. 
@@ -44,11 +60,16 @@ Now creates the list of candidates in the negative data.
 Better handeling of the plot. 
 Added two new keywords for the name of the candidates
 python GetLineCandidates_v0.2.py -Cube spw1_w4.fits -LineSearchPath LineSearchTEST1 -MaxSigmas 10 -MinSN 3.5 -SimulationPath Simulation1 -SurveyName ALESS122 -Wavelength 3
+---------------------------------------------------------------------------------------------
 
 GetLineCandidates_v0.5.py
 New Poisson statistics added and new outputs
 I tried to estimate the purity of the sample from the simulations but they have weird behavior in this version, I need to fix it.
 python GetLineCandidates_v0.5.py -Cube spw1_w4.fits -LineSearchPath LineSearchTEST1 -MaxSigmas 10 -MinSN 3.5 -SimulationPath Simulation1 -SurveyName ALESS122 -Wavelength 3
+---------------------------------------------------------------------------------------------
+
+v0.6
+Updated documentation and changed the naming convention where the version will be in the header.
 
 '''
 
@@ -482,7 +503,7 @@ plt.savefig('NumberPositiveNegative.pdf')
 ################################################
 ####  This part is just to write the file ######
 
-Output = open('PurityNegativePoissonData.dat','w')
+Output = open('PuritySample.dat','w')
 Output.write('#S/N PuritySimulations PurityNegative PurityPoisson\n')
 print 'SN neg:'
 for i in range(len(bins)):
@@ -499,7 +520,7 @@ Output.close()
 ################################################
 ####  This part is just to write the file ######
 
-Output = open('ProbabilityNegativePoissonData.dat','w')
+Output = open('ProbabilityFalse.dat','w')
 Output.write('#S/N ProbSimulationTotal ProbNegative ProbPoisson\n')
 print 'SN neg:'
 for i in range(len(bins)):
@@ -526,7 +547,7 @@ for i in range(len(ra)):
   c.append(SkyCoord(ra[i], dec[i], frame='icrs', unit='deg'))
 print 50*'#'
 
-Output = open('LineCandidates.dat','w')
+Output = open('LineCandidatesPositive.dat','w')
 Output.write('#ID RA DEC Frequency S/N ProbabilityFalseSimulation ProbabilityFalseNegative ProbabilityFalsePoisson\n')
 
 for i in range(len(FinalX)):
@@ -537,16 +558,16 @@ for i in range(len(FinalX)):
 Output.close()
 
 
-Output = open('ContaminationSimulations.dat','w')
-Output.write('#<ProbabilityFalse NumberLines FractionExpectedFalse ContaminationPercentage\n')
-print 50*'#'
-print 'Contamination rate, N, NFalse, fraction False'
-for i in np.arange(0,1.1,0.1):
-	print i,len(FinalX[FinalPuritySimulation<=i]),
-	print round(np.sum(np.ones_like(FinalX[FinalPuritySimulation<=i])*FinalPuritySimulation[FinalPuritySimulation<=i]),1),
-	print round(100.0*np.sum(np.ones_like(FinalX[FinalPuritySimulation<=i])*FinalPuritySimulation[FinalPuritySimulation<=i])/len(FinalX[FinalPuritySimulation<=i]),1),'%'
-	Output.write(str(i) + ' ' + str(len(FinalX[FinalPuritySimulation<=i])) + ' ' + str(round(np.sum(np.ones_like(FinalX[FinalPuritySimulation<=i])*FinalPuritySimulation[FinalPuritySimulation<=i]),1))  + ' ' + str(round(100.0*np.sum(np.ones_like(FinalX[FinalPuritySimulation<=i])*FinalPuritySimulation[FinalPuritySimulation<=i])/len(FinalX[FinalPuritySimulation<=i]),1)) +'\n')
-Output.close()
+# Output = open('ContaminationSimulations.dat','w')
+# Output.write('#<ProbabilityFalse NumberLines FractionExpectedFalse ContaminationPercentage\n')
+# print 50*'#'
+# print 'Contamination rate, N, NFalse, fraction False'
+# for i in np.arange(0,1.1,0.1):
+# 	print i,len(FinalX[FinalPuritySimulation<=i]),
+# 	print round(np.sum(np.ones_like(FinalX[FinalPuritySimulation<=i])*FinalPuritySimulation[FinalPuritySimulation<=i]),1),
+# 	print round(100.0*np.sum(np.ones_like(FinalX[FinalPuritySimulation<=i])*FinalPuritySimulation[FinalPuritySimulation<=i])/len(FinalX[FinalPuritySimulation<=i]),1),'%'
+# 	Output.write(str(i) + ' ' + str(len(FinalX[FinalPuritySimulation<=i])) + ' ' + str(round(np.sum(np.ones_like(FinalX[FinalPuritySimulation<=i])*FinalPuritySimulation[FinalPuritySimulation<=i]),1))  + ' ' + str(round(100.0*np.sum(np.ones_like(FinalX[FinalPuritySimulation<=i])*FinalPuritySimulation[FinalPuritySimulation<=i])/len(FinalX[FinalPuritySimulation<=i]),1)) +'\n')
+# Output.close()
 
 
 ######## Negatives ########

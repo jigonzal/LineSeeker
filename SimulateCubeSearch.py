@@ -43,7 +43,6 @@ python SimulateCubeSearch_v0.2.py -Cube spw1_w4.fits -UseMask True -ContinuumIma
 ---------------------------------------------------------------------------------------------
 
 v0.3
-SimulateCubeSearch.py
 Updated documentation and changed the naming convention where the version will be in the header.
 Remove printing of memory usage
 ---------------------------------------------------------------------------------------------

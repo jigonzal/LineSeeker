@@ -9,7 +9,9 @@ import os.path
 
 '''
 
-USAGE: "python SearchLine_vXX.py -h" will give a description of the input values
+USAGE: "python SearchLine.py -h" will give a description of the input values
+
+python SearchLine_v0.1.py -Cube cube.fits -MaxSigmas 10 -MinSN 3.5 -OutputPath LineSearchTEST1 -UseMask True -ContinuumImage continuum.fits -MaskSN 5.0
 
 Changelog:
 ---------------------------------------------------------------------------------------------
@@ -20,7 +22,12 @@ Script that search emission lines features.
 SearchLine_v0.1.py
 Now it gives the option to use the continuum image to mask continuum sources.
 
-python SearchLine_v0.1.py -Cube spw1_w4.fits -UseMask True -ContinuumImage ContinuumLESS1_v2.fits -MaxSigmas 10 -MinSN 3.5 -OutputPath LineSearchTEST1 -MaskSN 5.0
+---------------------------------------------------------------------------------------------
+SearchLine.py
+v0.2
+Updated documentation and changed the naming convention where the version will be in the header.
+
+
 '''
 
 def SearchLine(CubePath,FolderForLinesFiles,MinSN,sigmas,UseMask,ContinuumImage,MaskSN):

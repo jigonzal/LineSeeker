@@ -1,19 +1,30 @@
-import matplotlib as mpl
-mpl.use('Agg')
-import warnings
-from matplotlib import rcParams
-rcParams.update({'figure.autolayout': True})
-warnings.filterwarnings("ignore")
+#Change matplotlib backend to use Agg so it can run without an X server in a linux machine with Centos <7.
+try:
+	import matplotlib as mpl
+	mpl.use('Agg')
+except:
+	print 'Problem using Agg backend'
+# import warnings
+# warnings.filterwarnings("ignore")
+
+# from matplotlib import rcParams
+# rcParams.update({'figure.autolayout': True})
+
 import numpy as np
 import glob
 import matplotlib.pyplot as plt
 from sklearn.cluster import DBSCAN
-import seaborn as sns
-sns.set_style("white", {'legend.frameon': True})
-sns.set_style("ticks", {'legend.frameon': True})
-sns.set_context("talk")
-sns.set_palette('Dark2', 8,desat=1)
-cc = sns.color_palette()
+
+#Try to import seaborn and adjust the parameters of the output plots
+try:
+	import seaborn as sns
+	sns.set_style("white", {'legend.frameon': True})
+	sns.set_style("ticks", {'legend.frameon': True})
+	sns.set_context("talk")
+	sns.set_palette('Dark2', 8,desat=1)
+	cc = sns.color_palette()
+except:
+	print 'No seaborn package installed'
 import argparse
 import astropy.io.fits as fits
 from astropy import wcs

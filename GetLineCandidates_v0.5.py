@@ -37,18 +37,22 @@ from scipy.optimize import curve_fit
 
 USAGE: "python GetLineCandidates.py -h" will give a description of the input values
 
+python GetLineCandidates.py -Cube cube.fits -MaxSigmas 10 -MinSN 3.5 -LineSearchPath LineSearchTEST1 -SimulationPath Simulation1 -SurveyName Survey -Wavelength 3
+
 Changelog:
 ---------------------------------------------------------------------------------------------
 GetLineCandidates.py
 Script that finds the emission lines position in the files created by 
 This version works with SearchLine+v0.1.py
 python GetLineCandidates.py -Cube spw1_w4.fits -LineSearchPath LineSearchTEST1 -MaxSigmas 10 -MinSN 3.5 -SimulationPath Simulation1 
+---------------------------------------------------------------------------------------------
 
 GetLineCandidates_v0.1.py
 Script that finds the emission lines position in the files created by 
 This version works with SearchLine.v0.1.py
 This version returns all the lines with SN higher than MinSN, previously was only returning those with P<1
 python GetLineCandidates_v0.1.py -Cube spw1_w4.fits -LineSearchPath LineSearchTEST1 -MaxSigmas 10 -MinSN 3.5 -SimulationPath Simulation1 
+---------------------------------------------------------------------------------------------
 
 GetLineCandidates_v0.2.py
 Now it gives the output even when no Simulations are available. 
@@ -56,11 +60,16 @@ Now creates the list of candidates in the negative data.
 Better handeling of the plot. 
 Added two new keywords for the name of the candidates
 python GetLineCandidates_v0.2.py -Cube spw1_w4.fits -LineSearchPath LineSearchTEST1 -MaxSigmas 10 -MinSN 3.5 -SimulationPath Simulation1 -SurveyName ALESS122 -Wavelength 3
+---------------------------------------------------------------------------------------------
 
 GetLineCandidates_v0.5.py
 New Poisson statistics added and new outputs
 I tried to estimate the purity of the sample from the simulations but they have weird behavior in this version, I need to fix it.
 python GetLineCandidates_v0.5.py -Cube spw1_w4.fits -LineSearchPath LineSearchTEST1 -MaxSigmas 10 -MinSN 3.5 -SimulationPath Simulation1 -SurveyName ALESS122 -Wavelength 3
+---------------------------------------------------------------------------------------------
+
+v0.6
+Updated documentation and changed the naming convention where the version will be in the header.
 
 '''
 

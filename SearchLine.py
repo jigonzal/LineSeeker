@@ -11,7 +11,7 @@ import os.path
 
 USAGE: "python SearchLine.py -h" will give a description of the input values
 
-python SearchLine_v0.1.py -Cube cube.fits -MaxSigmas 10 -MinSN 3.5 -OutputPath LineSearchTEST1 -UseMask True -ContinuumImage continuum.fits -MaskSN 5.0
+python SearchLine.py -Cube cube.fits -MaxSigmas 10 -MinSN 3.5 -OutputPath LineSearchTEST1 -UseMask True -ContinuumImage continuum.fits -MaskSN 5.0
 
 Changelog:
 ---------------------------------------------------------------------------------------------

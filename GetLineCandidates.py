@@ -250,9 +250,12 @@ def GetFinalCandidates(SourcesTotalPos):
 	FinalPurityPoisson = []
 	for k in unique_labels:
 		class_member_mask = (labels == k)
-		FinalX.append(np.median(X[class_member_mask]))
-		FinalY.append(np.median(Y[class_member_mask]))
-		FinalChannel.append(np.median(Channel[class_member_mask]))
+# 		FinalX.append(np.median(X[class_member_mask]))
+# 		FinalY.append(np.median(Y[class_member_mask]))
+# 		FinalChannel.append(np.median(Channel[class_member_mask]))
+		FinalX.append(X[class_member_mask][np.argmax(SN[class_member_mask])])
+		FinalY.append(Y[class_member_mask][np.argmax(SN[class_member_mask])])
+		FinalChannel.append(Channel[class_member_mask][np.argmax(SN[class_member_mask])])
 		FinalSN.append(max(SN[class_member_mask]))
 		FinalPuritySimulation.append(min(puritySimulation[class_member_mask]))
 		FinalPurityNegative.append(min(purityNegative[class_member_mask]))

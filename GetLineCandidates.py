@@ -71,6 +71,11 @@ python GetLineCandidates_v0.5.py -Cube spw1_w4.fits -LineSearchPath LineSearchTE
 v0.6
 Updated documentation and changed the naming convention where the version will be in the header.
 
+---------------------------------------------------------------------------------------------
+v0.7
+Now it gives the positions and channels of the maximum S/N pixel instead of returning the median of all the selected pixels
+
+
 '''
 
 def NegativeRate(SNR,N,sigma):
@@ -111,11 +116,18 @@ def get_final_SN(SourcesTotal):
 	FinalChannel = []
 	FinalSN = []
 	FinalPurity = []
+# 	for k in unique_labels:
+# 		class_member_mask = (labels == k)
+# 		FinalX.append(np.median(X[class_member_mask]))
+# 		FinalY.append(np.median(Y[class_member_mask]))
+# 		FinalChannel.append(np.median(Channel[class_member_mask]))
+# 		FinalSN.append(max(SN[class_member_mask]))
+# 		FinalPurity.append(min(purity[class_member_mask]))
 	for k in unique_labels:
 		class_member_mask = (labels == k)
-		FinalX.append(np.median(X[class_member_mask]))
-		FinalY.append(np.median(Y[class_member_mask]))
-		FinalChannel.append(np.median(Channel[class_member_mask]))
+		FinalX.append(X[class_member_mask][np.argmax(SN[class_member_mask])])
+		FinalY.append(Y[class_member_mask][np.argmax(SN[class_member_mask])])
+		FinalChannel.append(Channel[class_member_mask][np.argmax(SN[class_member_mask])])
 		FinalSN.append(max(SN[class_member_mask]))
 		FinalPurity.append(min(purity[class_member_mask]))
 

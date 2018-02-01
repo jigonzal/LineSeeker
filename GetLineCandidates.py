@@ -292,16 +292,15 @@ def GetPoissonEstimates(bins,SNFinalPos,SNFinalNeg):
 	NPositive = []
 	Nnegative_e1 = []
 	Nnegative_e2 = []
-
 	for sn in bins:
 		if len(SNFinalPos[SNFinalPos>=sn])>0:
-			print sn,round(len(SNFinalNeg[SNFinalNeg>=sn])*1.0/len(SNFinalPos[SNFinalPos>=sn]),2)
+# 			print sn,round(len(SNFinalNeg[SNFinalNeg>=sn])*1.0/len(SNFinalPos[SNFinalPos>=sn]),2)
 			ProbNegativeOverPositive.append(len(SNFinalNeg[SNFinalNeg>=sn])*1.0/len(SNFinalPos[SNFinalPos>=sn]))
 		elif len(SNFinalNeg[SNFinalNeg>=sn])>0:
-			print sn,1.0
+# 			print sn,1.0
 			ProbNegativeOverPositive.append(1.0)
 		else:
-			print sn,0.0
+# 			print sn,0.0
 			ProbNegativeOverPositive.append(0.0)
 		k = len(SNFinalNeg[SNFinalNeg>=sn])
 		aux = scipy.special.gammaincinv(k + 1, [0.16,0.5,0.84])

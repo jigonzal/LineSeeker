@@ -570,9 +570,9 @@ Output.close()
 
 FinalX,FinalY,FinalChannel,FinalPuritySimulation,FinalPurityNegative,FinalPurityPoisson,FinalSN = GetFinalCandidates(SourcesTotalPos)
 
-print 50*'#'
-for i in range(len(FinalPuritySimulation)):
-	print FinalChannel[i],FinalX[i],FinalY[i],round(FinalSN[i],1),round(FinalPuritySimulation[i],2),round(FinalPurityNegative[i],2),round(FinalPurityPoisson[i],2)
+# print 50*'#'
+# for i in range(len(FinalPuritySimulation)):
+# 	print FinalChannel[i],FinalX[i],FinalY[i],round(FinalSN[i],1),round(FinalPuritySimulation[i],2),round(FinalPurityNegative[i],2),round(FinalPurityPoisson[i],2)
 
 
 hdulist =   fits.open(args.Cube,memmap=True)
@@ -590,7 +590,7 @@ Output.write('#ID RA DEC Frequency S/N ProbabilityFalseSimulation ProbabilityFal
 for i in range(len(FinalX)):
   k = i + 1
   i = len(FinalX)-i-1
-  print args.SurveyName+'-'+args.Wavelength+'mm.'+str(k).zfill(2)+' & '+c[i].to_string('hmsdms',sep=':',precision=3).split()[0]+' & '+c[i].to_string('hmsdms',sep=':',precision=3).split()[1]+' & '+str(round(freq[i]/1e9,3)).zfill(3)+' & '+str(round(FinalSN[i],1))+' & '+str(round(FinalPuritySimulation[i],2))+' & '+str(round(FinalPurityNegative[i],2))+' & '+str(round(FinalPurityPoisson[i],2))+'\\\\'
+#   print args.SurveyName+'-'+args.Wavelength+'mm.'+str(k).zfill(2)+' & '+c[i].to_string('hmsdms',sep=':',precision=3).split()[0]+' & '+c[i].to_string('hmsdms',sep=':',precision=3).split()[1]+' & '+str(round(freq[i]/1e9,3)).zfill(3)+' & '+str(round(FinalSN[i],1))+' & '+str(round(FinalPuritySimulation[i],2))+' & '+str(round(FinalPurityNegative[i],2))+' & '+str(round(FinalPurityPoisson[i],2))+'\\\\'
   Output.write(args.SurveyName+'-'+args.Wavelength+'mm.'+str(k).zfill(2)+' '+c[i].to_string('hmsdms',sep=':',precision=3).split()[0]+' '+c[i].to_string('hmsdms',sep=':',precision=3).split()[1]+' '+str(round(freq[i]/1e9,3)).zfill(3)+' '+str(round(FinalSN[i],1))+' '+str(round(FinalPuritySimulation[i],2))+' '+str(round(FinalPurityNegative[i],2))+' '+str(round(FinalPurityPoisson[i],2))+'\n')
 Output.close()
 
@@ -622,7 +622,7 @@ Output.write('#ID RA DEC Frequency S/N ProbabilityFalseSimulation ProbabilityFal
 for i in range(len(FinalX)):
   k = i + 1
   i = len(FinalX)-i-1
-  print args.SurveyName+'-'+args.Wavelength+'mm.NEG.'+str(k).zfill(2)+' & '+c[i].to_string('hmsdms',sep=':',precision=3).split()[0]+' & '+c[i].to_string('hmsdms',sep=':',precision=3).split()[1]+' & '+str(round(freq[i]/1e9,3)).zfill(3)+' & '+str(round(FinalSN[i],1))+' & '+str(round(FinalPuritySimulation[i],2))+' & '+str(round(FinalPurityNegative[i],2))+' & '+str(round(FinalPurityPoisson[i],2))+'\\\\'
+#   print args.SurveyName+'-'+args.Wavelength+'mm.NEG.'+str(k).zfill(2)+' & '+c[i].to_string('hmsdms',sep=':',precision=3).split()[0]+' & '+c[i].to_string('hmsdms',sep=':',precision=3).split()[1]+' & '+str(round(freq[i]/1e9,3)).zfill(3)+' & '+str(round(FinalSN[i],1))+' & '+str(round(FinalPuritySimulation[i],2))+' & '+str(round(FinalPurityNegative[i],2))+' & '+str(round(FinalPurityPoisson[i],2))+'\\\\'
   Output.write(args.SurveyName+'-'+args.Wavelength+'mm.NEG.'+str(k).zfill(2)+' '+c[i].to_string('hmsdms',sep=':',precision=3).split()[0]+' '+c[i].to_string('hmsdms',sep=':',precision=3).split()[1]+' '+str(round(freq[i]/1e9,3)).zfill(3)+' '+str(round(FinalSN[i],1))+' '+str(round(FinalPuritySimulation[i],2))+' '+str(round(FinalPurityNegative[i],2))+' '+str(round(FinalPurityPoisson[i],2))+'\n')
 Output.close()
 

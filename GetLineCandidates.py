@@ -490,7 +490,7 @@ for sn in bins:
 			N_detections += 1.0
 		aux.append(len(sim[sim>=sn]))
 	NSimulations.append(np.median(aux))
-	print sn,np.median(aux),aux
+	print sn,np.median(aux)
 	if N_simulations2>0:
 		yTotal.append(N_detections/N_simulations2)
 	else:

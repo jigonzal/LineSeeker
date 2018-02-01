@@ -313,7 +313,8 @@ def GetPoissonEstimates(bins,SNFinalPos,SNFinalNeg):
 
 	Nnegative = np.array(Nnegative)
 	NnegativeReal = np.array(NnegativeReal)
-
+	Nnegative_e1 = np.array(Nnegative_e1)
+	Nnegative_e2 = np.array(Nnegative_e2)
 	LimitN = 20
 	while len(Nnegative[Nnegative>LimitN])<2 and LimitN>0:
 		print 'Forcing the fitting of negative counts to bins with a lower counts because of too few bins ('+str(len(Nnegative[Nnegative>LimitN]))+') for '+str(args.MinSN)+' with detections over the limit LimitN:',str(LimitN)

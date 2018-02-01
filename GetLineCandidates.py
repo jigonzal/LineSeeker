@@ -225,7 +225,7 @@ def GetFinalCandidates(SourcesTotalPos):
 			X.append(NewSource[1])
 			Y.append(NewSource[2])
 			Channel.append(NewSource[0])
-			SN_array.append(max(NewSource[3]))		
+			SN_array.append(NewSource[3])		
 			puritySimulation.append(NewSource[5])	
 			purityNegative.append(NewSource[6])	
 			purityPoisson.append(NewSource[7])	

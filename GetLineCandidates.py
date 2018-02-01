@@ -94,7 +94,7 @@ def get_final_SN(SourcesTotal):
 			X.append(NewSource[1])
 			Y.append(NewSource[2])
 			Channel.append(NewSource[0])
-			SN_array.append(NewSource[3])		
+			SN_array.append(max(NewSource[3]))		
 			purity.append(NewSource[5])	
 
 	COORD = np.array(COORD)
@@ -175,11 +175,16 @@ def get_sources(files,minSN):
 				Channel.append(spw)
 				SN_array.append(sn)
 		for source in SourcesAux:
-				COORD.append(np.array([np.median(source[1]),np.median(source[2]),np.median(source[0])]))
-				X.append(np.median(source[1]))
-				Y.append(np.median(source[2]))
-				Channel.append(np.median(source[0]))
-				SN_array.append(source[3])			
+# 				COORD.append(np.array([np.median(source[1]),np.median(source[2]),np.median(source[0])]))
+# 				X.append(np.median(source[1]))
+# 				Y.append(np.median(source[2]))
+# 				Channel.append(np.median(source[0]))
+# 				SN_array.append(source[3])
+				COORD.append(np.array([source[1][np.argmax(source[3]))],source[2][np.argmax(source[3]))],source[0][np.argmax(source[3]))]]))
+				X.append(source[1][np.argmax(source[3]))])
+				Y.append(source[2][np.argmax(source[3]))])
+				Channel.append(source[0][np.argmax(source[3]))])
+				SN_array.append(source[3][np.argmax(source[3]))])
 
 		COORD = np.array(COORD)
 		X = np.array(X)
@@ -199,7 +204,7 @@ def get_sources(files,minSN):
 			for k in unique_labels:
 			    class_member_mask = (labels == k)
 
-			    source = [Channel[class_member_mask],X[class_member_mask],Y[class_member_mask],max(SN[class_member_mask]),max(Channel[class_member_mask])-min(Channel[class_member_mask])]
+			    source = [Channel[class_member_mask],X[class_member_mask],Y[class_member_mask],SN[class_member_mask],max(Channel[class_member_mask])-min(Channel[class_member_mask])]
 			    SourcesAux.append(source)
 		else:
 			SourcesAux = []
@@ -220,7 +225,7 @@ def GetFinalCandidates(SourcesTotalPos):
 			X.append(NewSource[1])
 			Y.append(NewSource[2])
 			Channel.append(NewSource[0])
-			SN_array.append(NewSource[3])		
+			SN_array.append(max(NewSource[3]))		
 			puritySimulation.append(NewSource[5])	
 			purityNegative.append(NewSource[6])	
 			purityPoisson.append(NewSource[7])	
@@ -372,7 +377,7 @@ for i in range(args.MaxSigmas):
 			aux = get_sources([folder+'/line_dandidates_sn_sigmas'+str(i)+'_pos.dat'],args.MinSN)
 			aux_sn = []
 			for source in aux:
-				aux_sn.append(source[3])
+				aux_sn.append(max(source[3]))
 			aux_sn = np.array(aux_sn)
 			SimulatedSources.append(aux_sn)
 
@@ -380,7 +385,7 @@ for i in range(args.MaxSigmas):
 			aux = get_sources([folder+'/line_dandidates_sn_sigmas'+str(i)+'_neg.dat'],args.MinSN)
 			aux_sn = []
 			for source in aux:
-				aux_sn.append(source[3])
+				aux_sn.append(max(source[3]))
 			aux_sn = np.array(aux_sn)
 			SimulatedSources.append(aux_sn)
 
@@ -391,12 +396,12 @@ for i in range(args.MaxSigmas):
 
 	SNReal = []
 	for source in Sources_real:
-		SNReal.append(source[3])
+		SNReal.append(max(source[3]))
 	SNReal = np.array(SNReal)
 
 	SNRealNeg = []
 	for source in Sources_realNeg:
-		SNRealNeg.append(source[3])
+		SNRealNeg.append(max(source[3]))
 	SNRealNeg = np.array(SNRealNeg)
 
 	SimulatedSources = np.array(SimulatedSources)
@@ -432,13 +437,15 @@ for i in range(args.MaxSigmas):
 
 
 	for source in Sources_real:
-		if source[3]>=args.MinSN:
-			NewSource = [np.median(source[0]),np.median(source[1]),np.median(source[2]),source[3],source[4],np.interp(source[3],bins,y),np.interp(source[3],bins,ProbNegativeOverPositive),np.interp(source[3],bins,ProbPoisson)]
+		if max(source[3])>=args.MinSN:
+# 			NewSource = [np.median(source[0]),np.median(source[1]),np.median(source[2]),source[3],source[4],np.interp(source[3],bins,y),np.interp(source[3],bins,ProbNegativeOverPositive),np.interp(source[3],bins,ProbPoisson)]
+			NewSource = [source[0][np.argmax(source[3])],source[1][np.argmax(source[3])],source[2][np.argmax(source[3])],source[3][np.argmax(source[3])],source[4][np.argmax(source[3])],np.interp(source[3][np.argmax(source[3])],bins,y),np.interp(source[3][np.argmax(source[3])],bins,ProbNegativeOverPositive),np.interp(source[3][np.argmax(source[3])],bins,ProbPoisson)]
 			SourcesTotalPos.append(NewSource)
 
 	for source in Sources_realNeg:
-		if source[3]>=args.MinSN:
-			NewSource = [np.median(source[0]),np.median(source[1]),np.median(source[2]),source[3],source[4],np.interp(source[3],bins,y),np.interp(source[3],bins,ProbNegativeOverPositive),np.interp(source[3],bins,ProbPoisson)]
+		if max(source[3])>=args.MinSN:
+# 			NewSource = [np.median(source[0]),np.median(source[1]),np.median(source[2]),source[3],source[4],np.interp(source[3],bins,y),np.interp(source[3],bins,ProbNegativeOverPositive),np.interp(source[3],bins,ProbPoisson)]
+			NewSource = [source[0][np.argmax(source[3])],source[1][np.argmax(source[3])],source[2][np.argmax(source[3])],source[3][np.argmax(source[3])],source[4][np.argmax(source[3])],np.interp(source[3][np.argmax(source[3])],bins,y),np.interp(source[3][np.argmax(source[3])],bins,ProbNegativeOverPositive),np.interp(source[3][np.argmax(source[3])],bins,ProbPoisson)]
 			SourcesTotalNeg.append(NewSource)
 
 
@@ -458,14 +465,14 @@ for folder in simulations_folders:
 		aux = get_sources(glob.glob(folder+'/*_pos.dat'),args.MinSN)
 		aux_sn = []
 		for source in aux:
-			aux_sn.append(source[3])
+			aux_sn.append(max(source[3]))
 		aux_sn = np.array(aux_sn)
 		SimulatedSourcesTotal.append(aux_sn)
 
 		aux = get_sources(glob.glob(folder+'/*_neg.dat'),args.MinSN)
 		aux_sn = []
 		for source in aux:
-			aux_sn.append(source[3])
+			aux_sn.append(max(source[3]))
 		aux_sn = np.array(aux_sn)
 		SimulatedSourcesTotal.append(aux_sn)
 

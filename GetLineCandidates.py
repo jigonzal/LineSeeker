@@ -7,8 +7,8 @@ except:
 # import warnings
 # warnings.filterwarnings("ignore")
 
-# from matplotlib import rcParams
-# rcParams.update({'figure.autolayout': True})
+from matplotlib import rcParams
+rcParams.update({'figure.autolayout': True})
 
 import numpy as np
 import glob

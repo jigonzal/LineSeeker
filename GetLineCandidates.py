@@ -496,6 +496,11 @@ for sn in bins:
 	else:
 		yTotal.append(-1.0)
 NSimulations = np.array(NSimulations)
+w, h = 1.0*plt.figaspect(0.9)
+fig = plt.figure(figsize=(w,h))
+plt.subplots_adjust(left=0.15, bottom=0.13, right=0.94, top=0.96,wspace=0.10, hspace=0.2)
+ax1 = plt.subplot(111)
+
 plt.plot(bins,yTotal,'--',color='green',label='Simulations Total',lw=3)
 bins,ProbPoisson,ProbNegativeOverPositive,PurityPoisson,NPositive,Nnegative,Nnegative_e1,Nnegative_e2,NegativeFitted,NnegativeReal = GetPoissonEstimates(bins,SNFinalPos,SNFinalNeg)
 plt.plot(bins,ProbNegativeOverPositive,'--',color='black',label='#Neg[>=sn]/#Pos[>=sn]',lw=3)
@@ -503,7 +508,7 @@ plt.plot(bins,ProbNegativeOverPositive,'--',color='black',label='#Neg[>=sn]/#Pos
 plt.plot(bins,ProbPoisson,'--',color='red',label='Poisson',lw=3)
 
 plt.xlabel('SN',fontsize=20)
-plt.ylabel('Probability of being produced by noise ',fontsize=20)
+plt.ylabel('Probability produced by noise ',fontsize=15)
 if args.MaxSigmas<10:
 	plt.legend(loc='best',fontsize=12,ncol=1)
 elif args.MaxSigmas>=10 and args.MaxSigmas<20:
@@ -514,9 +519,13 @@ plt.tick_params(axis='both', which='major', labelsize=20)
 plt.savefig('ProbabilityFalseSN.pdf')
 
 
-plt.figure()
+w, h = 1.0*plt.figaspect(0.9)
+fig = plt.figure(figsize=(w,h))
+plt.subplots_adjust(left=0.15, bottom=0.13, right=0.94, top=0.96,wspace=0.10, hspace=0.2)
+ax1 = plt.subplot(111)
+
 plt.semilogy(bins,NPositive,'-',color=cc[0],label='Positive Detections')
-plt.errorbar(bins,Nnegative,yerr=[Nnegative_e1,Nnegative_e2],fmt='o',color=cc[1],label='Negative Detections')
+plt.errorbar(bins[NnegativeReal>0],Nnegative[NnegativeReal>0],yerr=[Nnegative_e1[NnegativeReal>0],Nnegative_e2[NnegativeReal>0]],fmt='o',color=cc[1],label='Negative Detections')
 plt.semilogy(bins,NegativeFitted,'-',color=cc[2],label='Fitted Negative Estimate')
 
 plt.xlabel('SN',fontsize=20)

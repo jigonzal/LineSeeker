@@ -94,7 +94,7 @@ def get_final_SN(SourcesTotal):
 			X.append(NewSource[1])
 			Y.append(NewSource[2])
 			Channel.append(NewSource[0])
-			SN_array.append(max(NewSource[3]))		
+			SN_array.append(NewSource[3])		
 			purity.append(NewSource[5])	
 
 	COORD = np.array(COORD)

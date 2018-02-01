@@ -365,6 +365,11 @@ ax1 = plt.subplot(111)
 SourcesTotalPos = []
 SourcesTotalNeg = []
 
+w, h = 1.0*plt.figaspect(0.9)
+fig = plt.figure(figsize=(w,h))
+plt.subplots_adjust(left=0.15, bottom=0.13, right=0.94, top=0.96,wspace=0.10, hspace=0.2)
+ax1 = plt.subplot(111)
+
 for i in range(args.MaxSigmas):
 	print 50*'-'
 	Sources_real = np.array(get_sources([args.LineSearchPath+'/line_dandidates_sn_sigmas'+str(i)+'_pos.dat'],args.MinSN))
@@ -497,10 +502,7 @@ for sn in bins:
 	else:
 		yTotal.append(-1.0)
 NSimulations = np.array(NSimulations)
-w, h = 1.0*plt.figaspect(0.9)
-fig = plt.figure(figsize=(w,h))
-plt.subplots_adjust(left=0.15, bottom=0.13, right=0.94, top=0.96,wspace=0.10, hspace=0.2)
-ax1 = plt.subplot(111)
+
 
 plt.plot(bins,yTotal,'--',color='green',label='Simulations Total',lw=3)
 bins,ProbPoisson,ProbNegativeOverPositive,PurityPoisson,NPositive,Nnegative,Nnegative_e1,Nnegative_e2,NegativeFitted,NnegativeReal = GetPoissonEstimates(bins,SNFinalPos,SNFinalNeg)

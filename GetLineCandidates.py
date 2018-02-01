@@ -415,7 +415,7 @@ for i in range(args.MaxSigmas):
 	bins = np.arange(args.MinSN,7.1,0.1)
 	print 'for sigma',i
 	y = []
-
+	print 'S/N NDetected Fraction Nsimulations'
 	if len(SimulatedSources)>1:
 		for sn in bins:
 
@@ -465,8 +465,9 @@ bins = np.arange(args.MinSN,7.1,0.1)
 print 'Reading Simulations for Total estimate...'
 simulations_folders = glob.glob(args.SimulationPath+'/simul_*')
 SimulatedSourcesTotal = []
+counter = 1
 for folder in simulations_folders:
-	print folder
+	print folder,counter,'/',len(simulations_folders)
 	try:
 		aux = get_sources(glob.glob(folder+'/*_pos.dat'),args.MinSN)
 		aux_sn = []
@@ -481,9 +482,11 @@ for folder in simulations_folders:
 			aux_sn.append(max(source[3]))
 		aux_sn = np.array(aux_sn)
 		SimulatedSourcesTotal.append(aux_sn)
+		
 
 	except:
 		print 'file not working',folder
+	counter += 1
 SimulatedSourcesTotal = np.array(SimulatedSourcesTotal)
 yTotal = []
 NSimulations = []
@@ -496,7 +499,7 @@ for sn in bins:
 			N_detections += 1.0
 		aux.append(len(sim[sim>=sn]))
 	NSimulations.append(np.median(aux))
-	print sn,np.median(aux)
+# 	print sn,np.median(aux)
 	if N_simulations2>0:
 		yTotal.append(N_detections/N_simulations2)
 	else:
@@ -542,7 +545,7 @@ plt.savefig('NumberPositiveNegative.pdf')
 
 Output = open('PuritySample.dat','w')
 Output.write('#S/N PuritySimulations PurityNegative PurityPoisson\n')
-print 'SN neg:'
+# print 'SN neg:'
 for i in range(len(bins)):
 	if NPositive[i]>0:
 		Output.write(str(bins[i])+' '+str(max(round((NPositive[i]-NSimulations[i])/NPositive[i],2),0))+' '+str(max(round((NPositive[i]-NnegativeReal[i])/NPositive[i],2),0))+' '+str(round(PurityPoisson[i],2))+'\n')
@@ -559,7 +562,7 @@ Output.close()
 
 Output = open('ProbabilityFalse.dat','w')
 Output.write('#S/N ProbSimulationTotal ProbNegative ProbPoisson\n')
-print 'SN neg:'
+# print 'SN neg:'
 for i in range(len(bins)):
 	Output.write(str(bins[i])+' '+str(round(yTotal[i],2))+' '+str(round(ProbNegativeOverPositive[i],2))+' '+str(round(ProbPoisson[i],2))+'\n')
 
@@ -582,7 +585,7 @@ w = wcs.WCS(hdulist[0].header)
 c = []
 for i in range(len(ra)):
   c.append(SkyCoord(ra[i], dec[i], frame='icrs', unit='deg'))
-print 50*'#'
+# print 50*'#'
 
 Output = open('LineCandidatesPositive.dat','w')
 Output.write('#ID RA DEC Frequency S/N ProbabilityFalseSimulation ProbabilityFalseNegative ProbabilityFalsePoisson\n')
@@ -614,7 +617,7 @@ FinalX,FinalY,FinalChannel,FinalPuritySimulation,FinalPurityNegative,FinalPurity
 c = []
 for i in range(len(ra)):
   c.append(SkyCoord(ra[i], dec[i], frame='icrs', unit='deg'))
-print 50*'#'
+# print 50*'#'
 
 Output = open('LineCandidatesNegative.dat','w')
 Output.write('#ID RA DEC Frequency S/N ProbabilityFalseSimulation ProbabilityFalseNegative ProbabilityFalsePoisson\n')

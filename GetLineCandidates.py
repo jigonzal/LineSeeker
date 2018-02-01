@@ -484,7 +484,10 @@ for sn in bins:
 		aux.append(len(sim[sim>=sn]))
 	NSimulations.append(np.median(aux))
 	print sn,np.median(aux),aux
-	yTotal.append(N_detections/N_simulations2)
+	if N_simulations2>0:
+		yTotal.append(N_detections/N_simulations2)
+	else:
+		yTotal.append(-1.0)
 NSimulations = np.array(NSimulations)
 plt.plot(bins,yTotal,'--',color='green',label='Simulations Total',lw=3)
 bins,ProbPoisson,ProbNegativeOverPositive,PurityPoisson,NPositive,Nnegative,Nnegative_e1,Nnegative_e2,NegativeFitted,NnegativeReal = GetPoissonEstimates(bins,SNFinalPos,SNFinalNeg)

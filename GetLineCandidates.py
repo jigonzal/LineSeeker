@@ -180,7 +180,7 @@ def get_sources(files,minSN):
 # 				Y.append(np.median(source[2]))
 # 				Channel.append(np.median(source[0]))
 # 				SN_array.append(source[3])
-				COORD.append(np.array([source[1][np.argmax(source[3]))],source[2][np.argmax(source[3]))],source[0][np.argmax(source[3])]]))
+				COORD.append(np.array([source[1][np.argmax(source[3])],source[2][np.argmax(source[3])],source[0][np.argmax(source[3])]]))
 				X.append(source[1][np.argmax(source[3]))])
 				Y.append(source[2][np.argmax(source[3]))])
 				Channel.append(source[0][np.argmax(source[3]))])

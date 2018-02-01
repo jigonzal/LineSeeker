@@ -439,13 +439,13 @@ for i in range(args.MaxSigmas):
 	for source in Sources_real:
 		if max(source[3])>=args.MinSN:
 # 			NewSource = [np.median(source[0]),np.median(source[1]),np.median(source[2]),source[3],source[4],np.interp(source[3],bins,y),np.interp(source[3],bins,ProbNegativeOverPositive),np.interp(source[3],bins,ProbPoisson)]
-			NewSource = [source[0][np.argmax(source[3])],source[1][np.argmax(source[3])],source[2][np.argmax(source[3])],source[3][np.argmax(source[3])],source[4][np.argmax(source[3])],np.interp(source[3][np.argmax(source[3])],bins,y),np.interp(source[3][np.argmax(source[3])],bins,ProbNegativeOverPositive),np.interp(source[3][np.argmax(source[3])],bins,ProbPoisson)]
+			NewSource = [source[0][np.argmax(source[3])],source[1][np.argmax(source[3])],source[2][np.argmax(source[3])],source[3][np.argmax(source[3])],source[4],np.interp(source[3][np.argmax(source[3])],bins,y),np.interp(source[3][np.argmax(source[3])],bins,ProbNegativeOverPositive),np.interp(source[3][np.argmax(source[3])],bins,ProbPoisson)]
 			SourcesTotalPos.append(NewSource)
 
 	for source in Sources_realNeg:
 		if max(source[3])>=args.MinSN:
 # 			NewSource = [np.median(source[0]),np.median(source[1]),np.median(source[2]),source[3],source[4],np.interp(source[3],bins,y),np.interp(source[3],bins,ProbNegativeOverPositive),np.interp(source[3],bins,ProbPoisson)]
-			NewSource = [source[0][np.argmax(source[3])],source[1][np.argmax(source[3])],source[2][np.argmax(source[3])],source[3][np.argmax(source[3])],source[4][np.argmax(source[3])],np.interp(source[3][np.argmax(source[3])],bins,y),np.interp(source[3][np.argmax(source[3])],bins,ProbNegativeOverPositive),np.interp(source[3][np.argmax(source[3])],bins,ProbPoisson)]
+			NewSource = [source[0][np.argmax(source[3])],source[1][np.argmax(source[3])],source[2][np.argmax(source[3])],source[3][np.argmax(source[3])],source[4],np.interp(source[3][np.argmax(source[3])],bins,y),np.interp(source[3][np.argmax(source[3])],bins,ProbNegativeOverPositive),np.interp(source[3][np.argmax(source[3])],bins,ProbPoisson)]
 			SourcesTotalNeg.append(NewSource)
 
 

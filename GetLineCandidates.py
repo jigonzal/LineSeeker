@@ -539,6 +539,18 @@ plt.legend(loc=0,fontsize=12,ncol=1)
 plt.tick_params(axis='both', which='major', labelsize=20)
 plt.savefig('NumberPositiveNegative.pdf')
 
+w, h = 1.0*plt.figaspect(0.9)
+fig = plt.figure(figsize=(w,h))
+plt.subplots_adjust(left=0.15, bottom=0.13, right=0.94, top=0.96,wspace=0.10, hspace=0.2)
+ax1 = plt.subplot(111)
+plt.plot(bins,(NPositive-NSimulations)/NPositive,'-',color='green',label='Simulations Total',lw=3)
+plt.plot(bins,(NPositive-NnegativeReal)/NPositive,'-',color='black',label='#(Pos[>=sn] - Neg[>=sn])/#Pos[>=sn]',lw=3)
+plt.plot(bins,PurityPoisson,'-',color='red',label='Poisson',lw=3)
+plt.xlabel('SN',fontsize=20)
+plt.ylabel('Purity',fontsize=20)
+plt.legend(loc=0,fontsize=12,ncol=1)
+plt.tick_params(axis='both', which='major', labelsize=20)
+plt.savefig('Purity.pdf')
 ################################################
 ####  This part is just to write the file ######
 

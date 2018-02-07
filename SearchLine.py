@@ -57,7 +57,9 @@ def SearchLine(CubePath,FolderForLinesFiles,MinSN,sigmas,UseMask,ContinuumImage,
     for i in range(len(data)):
         if UseMask:
             data[i][Mask] = np.nan
-        data[i] = data[i]/np.nanstd(data[i])
+	InitialRMS = np.nanstd(data[i])
+        FinalRMS = np.nanstd(data[i][data[i]<5.0*InitialRMS])
+        data[i] = data[i]/FinalRMS
     pix1,pix2,pix3 = np.where(data>=MinSN)
     sn_linecandidates_pos.write('-----------------------------------------------------------\n')
     sn_linecandidates_pos.write(' spw0 sigma'+str(sigmas)+'\n')

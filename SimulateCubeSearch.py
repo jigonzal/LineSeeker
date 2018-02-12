@@ -248,7 +248,7 @@ def main():
     RefFrequency = Header['CRVAL3']
     ChannelSpacing = Header['CDELT3']
     ApproxChannelVelocityWidth = ( abs(ChannelSpacing)/RefFrequency ) * 3e5
-    ApproxMaxSigmas = int ((1000.0/ApproxChannelVelocityWidth) / 2.35)
+    ApproxMaxSigmas = int ((1000.0/ApproxChannelVelocityWidth) / 2.35) + 1
     print '*** MaxSigmas should be of the order of ',ApproxMaxSigmas,'to detect a line width FWHM ~ 1000 km/s ***'
     
 

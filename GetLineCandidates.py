@@ -75,6 +75,17 @@ Updated documentation and changed the naming convention where the version will b
 v0.7
 Now it gives the positions and channels of the maximum S/N pixel instead of returning the median of all the selected pixels
 
+---------------------------------------------------------------------------------------------
+v0.8
+I have updated the range of points the code uses to estimate the rate of negative detections. 
+Now it searches for 6 bins with number of detections higher than 20 (SN~5), this way the code tries
+to better fit the tail of negative counts without being much affected by low number statistics and not going
+to the low S/N regime.
+I chose 6 bins because is double the degree of freedom of the function to fit (2+1). 
+
+Modifictions to the plots.
+
+---------------------------------------------------------------------------------------------
 
 '''
 

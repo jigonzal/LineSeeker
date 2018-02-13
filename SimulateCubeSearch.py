@@ -75,17 +75,16 @@ def SimulateCube(CubePath):
     pix_size = head['CDELT2']*3600.0
     factor = 2*(np.pi*BMAJ*BMIN/(8.0*np.log(2)))/(pix_size**2)
     factor = 1.0/factor
-    # hdulist.close()
-
+    FractionBeam = 0.68
+    print 'Fraction Beam',FractionBeam
     KernelList = []
     for i in range(len(BMAJ)):
-        SigmaPixel = int((BMAJ[i]/2.355)/pix_size)
-
-        x = np.arange(-(3*SigmaPixel), (3*SigmaPixel)+1)
-        y = np.arange(-(3*SigmaPixel), (3*SigmaPixel)+1)
+        SigmaPixel = int((BMAJ[i]*FractionBeam/2.355)/pix_size)
+        x = np.arange(-(3*SigmaPixel), (3*SigmaPixel))
+        y = np.arange(-(3*SigmaPixel), (3*SigmaPixel))        
         x, y = np.meshgrid(x, y)
-        arr = models.Gaussian2D(amplitude=1.0,x_mean=0,y_mean=0,x_stddev=(BMAJ[i]/2.355)/pix_size,y_stddev=(BMIN[i]/2.355)/pix_size,theta=(BPA[i]*2.0*np.pi/360.0)+np.pi/2)(x,y)
-        kernel = Kernel2D(model=models.Gaussian2D(amplitude=1.0,x_mean=0,y_mean=0,x_stddev=(BMAJ[i]/2.355)/pix_size,y_stddev=(BMIN[i]/2.355)/pix_size,theta=(BPA[i]*2.0*np.pi/360.0)+np.pi/2),array=arr,width=len(x))
+        arr = models.Gaussian2D(amplitude=1.0,x_mean=0,y_mean=0,x_stddev=(BMAJ[i]*FractionBeam/2.355)/pix_size,y_stddev=(BMIN[i]*FractionBeam/2.355)/pix_size,theta=(BPA[i]*2.0*np.pi/360.0)+np.pi/2)(x,y)
+        kernel = Kernel2D(model=models.Gaussian2D(amplitude=1.0,x_mean=0,y_mean=0,x_stddev=(BMAJ[i]*FractionBeam/2.355)/pix_size,y_stddev=(BMIN[i]*FractionBeam/2.355)/pix_size,theta=(BPA[i]*2.0*np.pi/360.0)+np.pi/2),array=arr,width=len(x))
         KernelList.append(kernel)
 
     RMS = []

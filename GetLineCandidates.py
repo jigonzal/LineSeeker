@@ -303,7 +303,8 @@ def GetPoissonEstimates(bins,SNFinalPos,SNFinalNeg):
 	NnegativeReal = np.array(NnegativeReal)
 	Nnegative_e1 = np.array(Nnegative_e1)
 	Nnegative_e2 = np.array(Nnegative_e2)
-	LimitN = 20
+	# LimitN = 20.0
+	
 	# while len(Nnegative[Nnegative>LimitN])<2 and LimitN>0:
 	# 	print 'Forcing the fitting of negative counts to bins with a lower counts because of too few bins ('+str(len(Nnegative[Nnegative>LimitN]))+') for '+str(args.MinSN)+' with detections over the limit LimitN:',str(LimitN)
 	# 	LimitN = LimitN -1
@@ -314,23 +315,23 @@ def GetPoissonEstimates(bins,SNFinalPos,SNFinalNeg):
 	# 	popt, pcov = curve_fit(NegativeRate, bins[Nnegative>0], Nnegative[Nnegative>0])
 
 	MinSNtoFit = min(bins)
-	UsableBins = len(Nnegative[bins>=MinSNtoFit][Nnegative[bins>=MinSNtoFit]>=LimitN])
+	UsableBins = len(Nnegative[bins>=MinSNtoFit][Nnegative[bins>=MinSNtoFit]>=args.LimitN])
 	print 'Min SN to do the fit:',MinSNtoFit,', Number of usable bins:',UsableBins
 	if UsableBins<6:
 		print '*** We are using ',UsableBins,' points for the fitting of the negative counts ***'
 		print '*** We usually get good results with 6 points, try reducing the parameter -MinSN ***'
 	while UsableBins>6:
 		MinSNtoFit = MinSNtoFit + 0.1
-		UsableBins = len(Nnegative[bins>=MinSNtoFit][Nnegative[bins>=MinSNtoFit]>=LimitN])
+		UsableBins = len(Nnegative[bins>=MinSNtoFit][Nnegative[bins>=MinSNtoFit]>=args.LimitN])
 		print 'Min SN to do the fit:',MinSNtoFit,', Number of usable bins:',UsableBins
 		if MinSNtoFit>max(bins):
 			print 'No negative points to do the fit'
 			exit()
 
 	try:
-		popt, pcov = curve_fit(NegativeRate, bins[bins>=MinSNtoFit][Nnegative[bins>=MinSNtoFit]>LimitN], Nnegative[bins>=MinSNtoFit][Nnegative[bins>=MinSNtoFit]>LimitN])
+		popt, pcov = curve_fit(NegativeRate, bins[bins>=MinSNtoFit][Nnegative[bins>=MinSNtoFit]>args.LimitN], Nnegative[bins>=MinSNtoFit][Nnegative[bins>=MinSNtoFit]>args.LimitN])
 	except:
-		print 'Fitting failed for LimitN:'+str(LimitN)+' and '+str(args.MinSN)+'... Will force LimitN=0'
+		print 'Fitting failed for LimitN:'+str(args.LimitN)+' and '+str(args.MinSN)+'... Will force LimitN=0'
 		popt, pcov = curve_fit(NegativeRate, bins[Nnegative>0], Nnegative[Nnegative>0])	
 
 
@@ -360,6 +361,7 @@ parser.add_argument('-MaxSigmas', type=int, default = 10, required=False,help = 
 parser.add_argument('-MinSN', type=float, default = 5.0, required=False,help = 'Minimum S/N value to save in the outputs. A good value depends on each data cube, reasonable values are bettween 3.5 and 6 [Default:5.0]')
 parser.add_argument('-SurveyName', type=str, default='Survey', required=False , help = 'Name to identify the line candidates [Default:Survey]')
 parser.add_argument('-Wavelength', type=str, default='X', required=False , help = 'Wavelength for reference in the names [Default:X]')
+parser.add_argument('-LimitN', type=float, default='20.0', required=False , help = 'Limit for the number of detection above certain S/N to be used in the fitting of the negative counts [Default:20]')
 
 args = parser.parse_args()
 

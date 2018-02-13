@@ -47,6 +47,14 @@ Updated documentation and changed the naming convention where the version will b
 Remove printing of memory usage
 ---------------------------------------------------------------------------------------------
 
+v0.4
+Changed the Beam size for the simulations. Now the Simulations use a beam size that has a 68% the 
+size of BMAJ and BMIN of the reference beam size in the headers. Now the number of simulationed
+detected better resemble the ones detected in the negative and positive data. 
+My guess is that this is related to the number of independen beam in an interferometric data (check Condon's paper)
+
+---------------------------------------------------------------------------------------------
+
 '''
 
 def SimulateCube(CubePath):

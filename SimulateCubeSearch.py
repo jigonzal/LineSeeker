@@ -94,7 +94,8 @@ def SimulateCube(CubePath):
         FinalRMS = np.nanstd(data[i][data[i]<5.0*InitialRMS])
         RMS.append(FinalRMS)
     RMS = np.array(RMS)
-    print 'RMS:',np.mean(RMS),np.median(RMS)
+    print 'Average RMS per channel:',np.mean(RMS[np.isnfinite(RMS)]),'Jy/beam'
+    print 'Median RMS per channel:',np.median(RMS[np.isnfinite(RMS)]),'Jy/beam'
 
 
     RandomNoiseCube = np.random.normal(size=np.shape(data)) 

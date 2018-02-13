@@ -104,7 +104,6 @@ def get_final_SN(SourcesTotal):
 	SN = np.array(SN_array)
 	purity = np.array(purity)
 
-	# print 'Running DBSCAN...',len(COORD)
 	db = DBSCAN(eps=10, min_samples=1,leaf_size=30).fit(COORD)
 	core_samples_mask = np.zeros_like(db.labels_, dtype=bool)
 	core_samples_mask[db.core_sample_indices_] = True
@@ -116,13 +115,6 @@ def get_final_SN(SourcesTotal):
 	FinalChannel = []
 	FinalSN = []
 	FinalPurity = []
-# 	for k in unique_labels:
-# 		class_member_mask = (labels == k)
-# 		FinalX.append(np.median(X[class_member_mask]))
-# 		FinalY.append(np.median(Y[class_member_mask]))
-# 		FinalChannel.append(np.median(Channel[class_member_mask]))
-# 		FinalSN.append(max(SN[class_member_mask]))
-# 		FinalPurity.append(min(purity[class_member_mask]))
 	for k in unique_labels:
 		class_member_mask = (labels == k)
 		FinalX.append(X[class_member_mask][np.argmax(SN[class_member_mask])])
@@ -154,7 +146,6 @@ def get_sources(files,minSN):
 		Y = []
 		Channel = []
 		SN_array = []
-		# print 'Searching in: ',i
 		FileReader = open(i).readlines()
 		for j in FileReader:
 			FirstCharacter = j[0]
@@ -175,11 +166,6 @@ def get_sources(files,minSN):
 				Channel.append(spw)
 				SN_array.append(sn)
 		for source in SourcesAux:
-# 				COORD.append(np.array([np.median(source[1]),np.median(source[2]),np.median(source[0])]))
-# 				X.append(np.median(source[1]))
-# 				Y.append(np.median(source[2]))
-# 				Channel.append(np.median(source[0]))
-# 				SN_array.append(source[3])
 				COORD.append(np.array([source[1][np.argmax(source[3])],source[2][np.argmax(source[3])],source[0][np.argmax(source[3])]]))
 				X.append(source[1][np.argmax(source[3])])
 				Y.append(source[2][np.argmax(source[3])])
@@ -192,7 +178,6 @@ def get_sources(files,minSN):
 		Channel = np.array(Channel)
 		SN = np.array(SN_array)
 
-		# print 'Running DBSCAN...',len(COORD)
 		if len(COORD)>0:
 			db = DBSCAN(eps=10, min_samples=1,leaf_size=30).fit(COORD)
 			core_samples_mask = np.zeros_like(db.labels_, dtype=bool)
@@ -239,7 +224,6 @@ def GetFinalCandidates(SourcesTotalPos):
 	purityNegative = np.array(purityNegative)
 	purityPoisson = np.array(purityPoisson)
 
-	# print 'Running DBSCAN...',len(COORD)
 	db = DBSCAN(eps=10, min_samples=1,leaf_size=30).fit(COORD)
 	core_samples_mask = np.zeros_like(db.labels_, dtype=bool)
 	core_samples_mask[db.core_sample_indices_] = True
@@ -255,15 +239,12 @@ def GetFinalCandidates(SourcesTotalPos):
 	FinalPurityPoisson = []
 	for k in unique_labels:
 		class_member_mask = (labels == k)
-# 		FinalX.append(np.median(X[class_member_mask]))
-# 		FinalY.append(np.median(Y[class_member_mask]))
-# 		FinalChannel.append(np.median(Channel[class_member_mask]))
 		FinalX.append(X[class_member_mask][np.argmax(SN[class_member_mask])])
 		FinalY.append(Y[class_member_mask][np.argmax(SN[class_member_mask])])
 		FinalChannel.append(Channel[class_member_mask][np.argmax(SN[class_member_mask])])
 		FinalSN.append(max(SN[class_member_mask]))
 		FinalPuritySimulation.append(min(puritySimulation[class_member_mask]))
-		FinalPurityNegative.append(min(purityNegative[class_member_mask]))
+		FinalPurityNegative.append(min(min(purityNegative[class_member_mask]),1))
 		FinalPurityPoisson.append(min(purityPoisson[class_member_mask]))
 
 	FinalX = np.array(FinalX)
@@ -294,13 +275,10 @@ def GetPoissonEstimates(bins,SNFinalPos,SNFinalNeg):
 	Nnegative_e2 = []
 	for sn in bins:
 		if len(SNFinalPos[SNFinalPos>=sn])>0:
-# 			print sn,round(len(SNFinalNeg[SNFinalNeg>=sn])*1.0/len(SNFinalPos[SNFinalPos>=sn]),2)
 			ProbNegativeOverPositive.append(len(SNFinalNeg[SNFinalNeg>=sn])*1.0/len(SNFinalPos[SNFinalPos>=sn]))
 		elif len(SNFinalNeg[SNFinalNeg>=sn])>0:
-# 			print sn,1.0
 			ProbNegativeOverPositive.append(1.0)
 		else:
-# 			print sn,0.0
 			ProbNegativeOverPositive.append(0.0)
 		k = len(SNFinalNeg[SNFinalNeg>=sn])
 		aux = scipy.special.gammaincinv(k + 1, [0.16,0.5,0.84])
@@ -315,15 +293,36 @@ def GetPoissonEstimates(bins,SNFinalPos,SNFinalNeg):
 	Nnegative_e1 = np.array(Nnegative_e1)
 	Nnegative_e2 = np.array(Nnegative_e2)
 	LimitN = 20
-	while len(Nnegative[Nnegative>LimitN])<2 and LimitN>0:
-		print 'Forcing the fitting of negative counts to bins with a lower counts because of too few bins ('+str(len(Nnegative[Nnegative>LimitN]))+') for '+str(args.MinSN)+' with detections over the limit LimitN:',str(LimitN)
-		LimitN = LimitN -1
+	# while len(Nnegative[Nnegative>LimitN])<2 and LimitN>0:
+	# 	print 'Forcing the fitting of negative counts to bins with a lower counts because of too few bins ('+str(len(Nnegative[Nnegative>LimitN]))+') for '+str(args.MinSN)+' with detections over the limit LimitN:',str(LimitN)
+	# 	LimitN = LimitN -1
+	# try:
+	# 	popt, pcov = curve_fit(NegativeRate, bins[Nnegative>LimitN], Nnegative[Nnegative>LimitN])
+	# except:
+	# 	print 'Fitting failed for LimitN:'+str(LimitN)+' and '+str(args.MinSN)+'... Will force LimitN=0'
+	# 	popt, pcov = curve_fit(NegativeRate, bins[Nnegative>0], Nnegative[Nnegative>0])
+
+	MinSNtoFit = min(bins)
+	UsableBins = len(Nnegative[bins>=MinSNtoFit][Nnegative[bins>=MinSNtoFit]>=LimitN])
+	print 'Min SN to do the fit:',MinSNtoFit,', Number of usable bins:',UsableBins
+	if UsableBins<6:
+		print '*** We are using ',UsableBins,' points for the fitting of the negative counts ***'
+		print '*** We usually get good results with 6 points, try reducing the parameter -MinSN ***'
+	while UsableBins>6:
+		MinSNtoFit = MinSNtoFit + 0.1
+		UsableBins = len(Nnegative[bins>=MinSNtoFit][Nnegative[bins>=MinSNtoFit]>=LimitN])
+		print 'Min SN to do the fit:',MinSNtoFit,', Number of usable bins:',UsableBins
+		if MinSNtoFit>max(bins):
+			print 'No negative points to do the fit'
+			exit()
+
 	try:
-		popt, pcov = curve_fit(NegativeRate, bins[Nnegative>LimitN], Nnegative[Nnegative>LimitN])
+		popt, pcov = curve_fit(NegativeRate, bins[bins>=MinSNtoFit][Nnegative[bins>=MinSNtoFit]>LimitN], Nnegative[bins>=MinSNtoFit][Nnegative[bins>=MinSNtoFit]>LimitN])
 	except:
 		print 'Fitting failed for LimitN:'+str(LimitN)+' and '+str(args.MinSN)+'... Will force LimitN=0'
-		popt, pcov = curve_fit(NegativeRate, bins[Nnegative>0], Nnegative[Nnegative>0])
-	# print popt
+		popt, pcov = curve_fit(NegativeRate, bins[Nnegative>0], Nnegative[Nnegative>0])	
+
+
 	NegativeFitted = NegativeRate(bins,popt[0],popt[1])
 
 	for i in range(len(bins)):
@@ -376,7 +375,6 @@ for i in range(args.MaxSigmas):
 
 	simulations_folders = glob.glob(args.SimulationPath+'/simul_*')
 	SimulatedSources = []
-	# N_simulations = 0.0
 	for folder in simulations_folders:
 		try:
 			aux = get_sources([folder+'/line_dandidates_sn_sigmas'+str(i)+'_pos.dat'],args.MinSN)
@@ -386,16 +384,12 @@ for i in range(args.MaxSigmas):
 			aux_sn = np.array(aux_sn)
 			SimulatedSources.append(aux_sn)
 
-			# N_simulations += 1.0
 			aux = get_sources([folder+'/line_dandidates_sn_sigmas'+str(i)+'_neg.dat'],args.MinSN)
 			aux_sn = []
 			for source in aux:
 				aux_sn.append(max(source[3]))
 			aux_sn = np.array(aux_sn)
 			SimulatedSources.append(aux_sn)
-
-			# N_simulations += 1.0
-
 		except:
 			print 'file not working',folder+'/line_dandidates_sn_sigmas'+str(i)+'_pos.dat'
 
@@ -443,13 +437,11 @@ for i in range(args.MaxSigmas):
 
 	for source in Sources_real:
 		if max(source[3])>=args.MinSN:
-# 			NewSource = [np.median(source[0]),np.median(source[1]),np.median(source[2]),source[3],source[4],np.interp(source[3],bins,y),np.interp(source[3],bins,ProbNegativeOverPositive),np.interp(source[3],bins,ProbPoisson)]
 			NewSource = [source[0][np.argmax(source[3])],source[1][np.argmax(source[3])],source[2][np.argmax(source[3])],source[3][np.argmax(source[3])],source[4],np.interp(source[3][np.argmax(source[3])],bins,y),np.interp(source[3][np.argmax(source[3])],bins,ProbNegativeOverPositive),np.interp(source[3][np.argmax(source[3])],bins,ProbPoisson)]
 			SourcesTotalPos.append(NewSource)
 
 	for source in Sources_realNeg:
 		if max(source[3])>=args.MinSN:
-# 			NewSource = [np.median(source[0]),np.median(source[1]),np.median(source[2]),source[3],source[4],np.interp(source[3],bins,y),np.interp(source[3],bins,ProbNegativeOverPositive),np.interp(source[3],bins,ProbPoisson)]
 			NewSource = [source[0][np.argmax(source[3])],source[1][np.argmax(source[3])],source[2][np.argmax(source[3])],source[3][np.argmax(source[3])],source[4],np.interp(source[3][np.argmax(source[3])],bins,y),np.interp(source[3][np.argmax(source[3])],bins,ProbNegativeOverPositive),np.interp(source[3][np.argmax(source[3])],bins,ProbPoisson)]
 			SourcesTotalNeg.append(NewSource)
 
@@ -498,20 +490,19 @@ for sn in bins:
 			N_detections += 1.0
 		aux.append(len(sim[sim>=sn]))
 	NSimulations.append(np.median(aux))
-# 	print sn,np.median(aux)
 	if N_simulations2>0:
 		yTotal.append(N_detections/N_simulations2)
 	else:
 		yTotal.append(-1.0)
 NSimulations = np.array(NSimulations)
 
-
+yTotal[yTotal>1] = 1
 plt.plot(bins,yTotal,'--',color='green',label='Simulations Total',lw=3)
 bins,ProbPoisson,ProbNegativeOverPositive,PurityPoisson,NPositive,Nnegative,Nnegative_e1,Nnegative_e2,NegativeFitted,NnegativeReal = GetPoissonEstimates(bins,SNFinalPos,SNFinalNeg)
+ProbNegativeOverPositive[ProbNegativeOverPositive>1] = 1
+ProbPoisson[ProbPoisson>1] = 1
 plt.plot(bins,ProbNegativeOverPositive,'--',color='black',label='#Neg[>=sn]/#Pos[>=sn]',lw=3)
-
 plt.plot(bins,ProbPoisson,'--',color='red',label='Poisson',lw=3)
-
 plt.xlabel('SN',fontsize=20)
 plt.ylabel('Probability produced by noise ',fontsize=15)
 if args.MaxSigmas<10:
@@ -521,6 +512,7 @@ elif args.MaxSigmas>=10 and args.MaxSigmas<20:
 else:
 	plt.legend(loc='best',fontsize=8,ncol=2)
 plt.tick_params(axis='both', which='major', labelsize=20)
+plt.ylim(-0.1,1.2)
 plt.savefig('ProbabilityFalseSN.pdf')
 
 
@@ -528,35 +520,39 @@ w, h = 1.0*plt.figaspect(0.9)
 fig = plt.figure(figsize=(w,h))
 plt.subplots_adjust(left=0.15, bottom=0.13, right=0.94, top=0.96,wspace=0.10, hspace=0.2)
 ax1 = plt.subplot(111)
-
 plt.semilogy(bins,NPositive,'-',color=cc[0],label='Positive Detections')
 plt.errorbar(bins[NnegativeReal>0],Nnegative[NnegativeReal>0],yerr=[Nnegative_e1[NnegativeReal>0],Nnegative_e2[NnegativeReal>0]],fmt='o',color=cc[1],label='Negative Detections')
 plt.semilogy(bins,NegativeFitted,'-',color=cc[2],label='Fitted Negative Estimate')
-
 plt.xlabel('SN',fontsize=20)
 plt.ylabel('N',fontsize=20)
-plt.legend(loc=0,fontsize=12,ncol=1)
+plt.legend(loc=0,fontsize=20,ncol=1)
 plt.tick_params(axis='both', which='major', labelsize=20)
+plt.ylim(ymin=0.1)
 plt.savefig('NumberPositiveNegative.pdf')
 
 w, h = 1.0*plt.figaspect(0.9)
 fig = plt.figure(figsize=(w,h))
 plt.subplots_adjust(left=0.15, bottom=0.13, right=0.94, top=0.96,wspace=0.10, hspace=0.2)
 ax1 = plt.subplot(111)
-plt.plot(bins,(NPositive-NSimulations)/NPositive,'-',color='green',label='Simulations Total',lw=3)
-plt.plot(bins,(NPositive-NnegativeReal)/NPositive,'-',color='black',label='#(Pos[>=sn] - Neg[>=sn])/#Pos[>=sn]',lw=3)
+AuxPuritySimulation = (NPositive-NSimulations)/NPositive
+AuxPurityNegatives = (NPositive-NnegativeReal)/NPositive
+AuxPuritySimulation[AuxPuritySimulation<0] = 0
+AuxPurityNegatives[AuxPurityNegatives<0] = 0
+PurityPoisson[PurityPoisson<0] = 0
+plt.plot(bins,AuxPuritySimulation,'-',color='green',label='Simulations Total',lw=3)
+plt.plot(bins,AuxPurityNegatives,'-',color='black',label='#(Pos[>=sn] - Neg[>=sn])/#Pos[>=sn]',lw=3)
 plt.plot(bins,PurityPoisson,'-',color='red',label='Poisson',lw=3)
 plt.xlabel('SN',fontsize=20)
 plt.ylabel('Purity',fontsize=20)
 plt.legend(loc=0,fontsize=12,ncol=1)
 plt.tick_params(axis='both', which='major', labelsize=20)
+plt.ylim(-0.1,1.2)
 plt.savefig('Purity.pdf')
+
 ################################################
 ####  This part is just to write the file ######
-
 Output = open('PuritySample.dat','w')
 Output.write('#S/N PuritySimulations PurityNegative PurityPoisson\n')
-# print 'SN neg:'
 for i in range(len(bins)):
 	if NPositive[i]>0:
 		Output.write(str(bins[i])+' '+str(max(round((NPositive[i]-NSimulations[i])/NPositive[i],2),0))+' '+str(max(round((NPositive[i]-NnegativeReal[i])/NPositive[i],2),0))+' '+str(round(PurityPoisson[i],2))+'\n')
@@ -570,7 +566,6 @@ Output.close()
 
 ################################################
 ####  This part is just to write the file ######
-
 Output = open('ProbabilityFalse.dat','w')
 Output.write('#S/N ProbSimulationTotal ProbNegative ProbPoisson\n')
 # print 'SN neg:'
@@ -584,11 +579,6 @@ Output.close()
 
 FinalX,FinalY,FinalChannel,FinalPuritySimulation,FinalPurityNegative,FinalPurityPoisson,FinalSN = GetFinalCandidates(SourcesTotalPos)
 
-# print 50*'#'
-# for i in range(len(FinalPuritySimulation)):
-# 	print FinalChannel[i],FinalX[i],FinalY[i],round(FinalSN[i],1),round(FinalPuritySimulation[i],2),round(FinalPurityNegative[i],2),round(FinalPurityPoisson[i],2)
-
-
 hdulist =   fits.open(args.Cube,memmap=True)
 w = wcs.WCS(hdulist[0].header)
 
@@ -596,7 +586,6 @@ w = wcs.WCS(hdulist[0].header)
 c = []
 for i in range(len(ra)):
   c.append(SkyCoord(ra[i], dec[i], frame='icrs', unit='deg'))
-# print 50*'#'
 
 Output = open('LineCandidatesPositive.dat','w')
 Output.write('#ID RA DEC Frequency S/N ProbabilityFalseSimulation ProbabilityFalseNegative ProbabilityFalsePoisson\n')
@@ -604,21 +593,8 @@ Output.write('#ID RA DEC Frequency S/N ProbabilityFalseSimulation ProbabilityFal
 for i in range(len(FinalX)):
   k = i + 1
   i = len(FinalX)-i-1
-#   print args.SurveyName+'-'+args.Wavelength+'mm.'+str(k).zfill(2)+' & '+c[i].to_string('hmsdms',sep=':',precision=3).split()[0]+' & '+c[i].to_string('hmsdms',sep=':',precision=3).split()[1]+' & '+str(round(freq[i]/1e9,3)).zfill(3)+' & '+str(round(FinalSN[i],1))+' & '+str(round(FinalPuritySimulation[i],2))+' & '+str(round(FinalPurityNegative[i],2))+' & '+str(round(FinalPurityPoisson[i],2))+'\\\\'
   Output.write(args.SurveyName+'-'+args.Wavelength+'mm.'+str(k).zfill(2)+' '+c[i].to_string('hmsdms',sep=':',precision=3).split()[0]+' '+c[i].to_string('hmsdms',sep=':',precision=3).split()[1]+' '+str(round(freq[i]/1e9,3)).zfill(3)+' '+str(round(FinalSN[i],1))+' '+str(round(FinalPuritySimulation[i],2))+' '+str(round(FinalPurityNegative[i],2))+' '+str(round(FinalPurityPoisson[i],2))+'\n')
 Output.close()
-
-
-# Output = open('ContaminationSimulations.dat','w')
-# Output.write('#<ProbabilityFalse NumberLines FractionExpectedFalse ContaminationPercentage\n')
-# print 50*'#'
-# print 'Contamination rate, N, NFalse, fraction False'
-# for i in np.arange(0,1.1,0.1):
-# 	print i,len(FinalX[FinalPuritySimulation<=i]),
-# 	print round(np.sum(np.ones_like(FinalX[FinalPuritySimulation<=i])*FinalPuritySimulation[FinalPuritySimulation<=i]),1),
-# 	print round(100.0*np.sum(np.ones_like(FinalX[FinalPuritySimulation<=i])*FinalPuritySimulation[FinalPuritySimulation<=i])/len(FinalX[FinalPuritySimulation<=i]),1),'%'
-# 	Output.write(str(i) + ' ' + str(len(FinalX[FinalPuritySimulation<=i])) + ' ' + str(round(np.sum(np.ones_like(FinalX[FinalPuritySimulation<=i])*FinalPuritySimulation[FinalPuritySimulation<=i]),1))  + ' ' + str(round(100.0*np.sum(np.ones_like(FinalX[FinalPuritySimulation<=i])*FinalPuritySimulation[FinalPuritySimulation<=i])/len(FinalX[FinalPuritySimulation<=i]),1)) +'\n')
-# Output.close()
 
 
 ######## Negatives ########
@@ -628,7 +604,6 @@ FinalX,FinalY,FinalChannel,FinalPuritySimulation,FinalPurityNegative,FinalPurity
 c = []
 for i in range(len(ra)):
   c.append(SkyCoord(ra[i], dec[i], frame='icrs', unit='deg'))
-# print 50*'#'
 
 Output = open('LineCandidatesNegative.dat','w')
 Output.write('#ID RA DEC Frequency S/N ProbabilityFalseSimulation ProbabilityFalseNegative ProbabilityFalsePoisson\n')
@@ -636,7 +611,6 @@ Output.write('#ID RA DEC Frequency S/N ProbabilityFalseSimulation ProbabilityFal
 for i in range(len(FinalX)):
   k = i + 1
   i = len(FinalX)-i-1
-#   print args.SurveyName+'-'+args.Wavelength+'mm.NEG.'+str(k).zfill(2)+' & '+c[i].to_string('hmsdms',sep=':',precision=3).split()[0]+' & '+c[i].to_string('hmsdms',sep=':',precision=3).split()[1]+' & '+str(round(freq[i]/1e9,3)).zfill(3)+' & '+str(round(FinalSN[i],1))+' & '+str(round(FinalPuritySimulation[i],2))+' & '+str(round(FinalPurityNegative[i],2))+' & '+str(round(FinalPurityPoisson[i],2))+'\\\\'
   Output.write(args.SurveyName+'-'+args.Wavelength+'mm.NEG.'+str(k).zfill(2)+' '+c[i].to_string('hmsdms',sep=':',precision=3).split()[0]+' '+c[i].to_string('hmsdms',sep=':',precision=3).split()[1]+' '+str(round(freq[i]/1e9,3)).zfill(3)+' '+str(round(FinalSN[i],1))+' '+str(round(FinalPuritySimulation[i],2))+' '+str(round(FinalPurityNegative[i],2))+' '+str(round(FinalPurityPoisson[i],2))+'\n')
 Output.close()
 

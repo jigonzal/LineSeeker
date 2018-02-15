@@ -362,6 +362,7 @@ parser.add_argument('-MinSN', type=float, default = 5.0, required=False,help = '
 parser.add_argument('-SurveyName', type=str, default='Survey', required=False , help = 'Name to identify the line candidates [Default:Survey]')
 parser.add_argument('-Wavelength', type=str, default='X', required=False , help = 'Wavelength for reference in the names [Default:X]')
 parser.add_argument('-LimitN', type=float, default='20.0', required=False , help = 'Limit for the number of detection above certain S/N to be used in the fitting of the negative counts [Default:20]')
+parser.add_argument('-LegendFontSize', type=float, default='10.0', required=False , help = 'Fontsize fot the figures legends [Default:10]')
 
 args = parser.parse_args()
 
@@ -518,12 +519,10 @@ plt.plot(bins,ProbNegativeOverPositive,'--',color='black',label='#Neg[>=sn]/#Pos
 plt.plot(bins,ProbPoisson,'--',color='red',label='Poisson',lw=3)
 plt.xlabel('SN',fontsize=20)
 plt.ylabel('Probability produced by noise ',fontsize=15)
-if args.MaxSigmas<10:
-	plt.legend(loc='best',fontsize=12,ncol=1)
-elif args.MaxSigmas>=10 and args.MaxSigmas<20:
-	plt.legend(loc='best',fontsize=10,ncol=1)
+if args.MaxSigmas<20:
+	plt.legend(loc='best',fontsize=args.LegendFontSize,ncol=1)
 else:
-	plt.legend(loc='best',fontsize=8,ncol=2)
+	plt.legend(loc='best',fontsize=args.LegendFontSize,ncol=2)
 plt.tick_params(axis='both', which='major', labelsize=20)
 plt.ylim(-0.1,1.2)
 plt.savefig('ProbabilityFalseSN.pdf')
@@ -538,7 +537,7 @@ plt.errorbar(bins[NnegativeReal>0],Nnegative[NnegativeReal>0],yerr=[Nnegative_e1
 plt.semilogy(bins,NegativeFitted,'-',color=cc[2],label='Fitted Negative Estimate')
 plt.xlabel('SN',fontsize=20)
 plt.ylabel('N',fontsize=20)
-plt.legend(loc=0,fontsize=20,ncol=1)
+plt.legend(loc=0,fontsize=args.LegendFontSize,ncol=1)
 plt.tick_params(axis='both', which='major', labelsize=20)
 plt.ylim(ymin=0.1)
 plt.savefig('NumberPositiveNegative.pdf')
@@ -557,7 +556,7 @@ plt.plot(bins,AuxPurityNegatives,'-',color='black',label='#(Pos[>=sn] - Neg[>=sn
 plt.plot(bins,PurityPoisson,'-',color='red',label='Poisson',lw=3)
 plt.xlabel('SN',fontsize=20)
 plt.ylabel('Purity',fontsize=20)
-plt.legend(loc=0,fontsize=12,ncol=1)
+plt.legend(loc=0,fontsize=args.LegendFontSize,ncol=1)
 plt.tick_params(axis='both', which='major', labelsize=20)
 plt.ylim(-0.1,1.2)
 plt.savefig('Purity.pdf')

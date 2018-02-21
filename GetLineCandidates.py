@@ -524,7 +524,7 @@ if args.MaxSigmas<20:
 else:
 	plt.legend(loc='best',fontsize=args.LegendFontSize,ncol=2)
 plt.tick_params(axis='both', which='major', labelsize=20)
-plt.ylim(-0.1,1.2)
+plt.ylim(-0.1,1.1)
 plt.savefig('ProbabilityFalseSN.pdf')
 
 
@@ -558,7 +558,7 @@ plt.xlabel('SN',fontsize=20)
 plt.ylabel('Purity',fontsize=20)
 plt.legend(loc=0,fontsize=args.LegendFontSize,ncol=1)
 plt.tick_params(axis='both', which='major', labelsize=20)
-plt.ylim(-0.1,1.2)
+plt.ylim(-0.1,1.1)
 plt.savefig('Purity.pdf')
 
 ################################################

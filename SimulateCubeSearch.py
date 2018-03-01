@@ -108,9 +108,10 @@ def SimulateCube(CubePath):
     RandomNoiseCube = np.random.normal(size=np.shape(data)) 
 
     for i in range(len(RandomNoiseCube)):
-        smoothed = convolve_fft(RandomNoiseCube[i], KernelList[i])
-        std_aux = np.nanstd(smoothed)
+        
         if np.isfinite(RMS[i]) and RMS[i]!=0.0:
+            smoothed = convolve_fft(RandomNoiseCube[i], KernelList[i])
+            std_aux = np.nanstd(smoothed)
             RandomNoiseCube[i] = smoothed*RMS[i]/std_aux
         else:
             RandomNoiseCube[i] = 0.0

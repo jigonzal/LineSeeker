@@ -225,8 +225,8 @@ def main():
     if args.MinSN<0:
         print '*** The value for MinSN of',args.MinSN,'has to be positive ***\naborting..'
         exit()
-    elif args.MinSN<3.5:
-        print '*** The value for MinSN of',args.MinSN,'is smaller than needed but usable, expect larger files ***'
+#     elif args.MinSN<3.5:
+#         print '*** The value for MinSN of',args.MinSN,'is smaller than needed but usable, expect larger files ***'
     else:
         print '*** The value for MinSN of',args.MinSN,'is ok ***'
 

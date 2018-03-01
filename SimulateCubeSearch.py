@@ -87,7 +87,7 @@ def SimulateCube(CubePath):
     print 'Fraction Beam',FractionBeam
     KernelList = []
     for i in range(len(BMAJ)):
-        SigmaPixel = int((BMAJ[i]*FractionBeam/2.355)/pix_size)
+        SigmaPixel = int((BMAJ[i]*FractionBeam/2.355)/pix_size)+1
         x = np.arange(-(3*SigmaPixel), (3*SigmaPixel))
         y = np.arange(-(3*SigmaPixel), (3*SigmaPixel))        
         x, y = np.meshgrid(x, y)

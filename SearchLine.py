@@ -29,6 +29,39 @@ Updated documentation and changed the naming convention where the version will b
 
 '''
 
+def GetValue(CubePath):
+    hdulist =   fits.open(CubePath,memmap=True)
+    head = hdulist[0].header
+    data = hdulist[0].data[0]
+    try:
+        BMAJ = hdulist[1].data.field('BMAJ')
+        BMIN = hdulist[1].data.field('BMIN')
+        BPA = hdulist[1].data.field('BPA')
+    except:
+        BMAJ = []
+        BMIN = []
+        BPA = []
+        for i in range(len(data)):
+            BMAJ.append(head['BMAJ']*3600.0)
+            BMIN.append(head['BMIN']*3600.0)
+            BPA.append(head['BPA'])
+        BMAJ = np.array(BMAJ)
+        BMIN = np.array(BMIN)
+        BPA = np.array(BPA)
+    pix_size = head['CDELT2']*3600.0
+    factor = 2*(np.pi*BMAJ*BMIN/(8.0*np.log(2)))/(pix_size**2)
+
+    RefFrequency = head['CRVAL3']
+    ChannelSpacing = head['CDELT3']
+    ApproxChannelVelocityWidth = ( abs(ChannelSpacing)/RefFrequency ) * 3e5
+    ApproxMaxSigmas = 1000.0/ApproxChannelVelocityWidth
+
+
+    aux = len(data[0][np.isfinite(data[0])].flatten())*1.0/factor[0]*(len(data)/ApproxMaxSigmas)
+    print '*** A rough guesstimate to use as MinSN is',round(np.power(10,np.log10(aux)*0.07723905 + 0.19291493),1),'***'
+    # print len(data[0][np.isfinite(data[0])].flatten())*1.0/factor[0]*(len(data)/ApproxMaxSigmas)
+    return 
+
 def SearchLine(CubePath,FolderForLinesFiles,MinSN,sigmas,UseMask,ContinuumImage,MaskSN):
 
     SN = np.array([])
@@ -155,7 +188,7 @@ def main():
     ApproxChannelVelocityWidth = ( abs(ChannelSpacing)/RefFrequency ) * 3e5
     ApproxMaxSigmas = int ((1000.0/ApproxChannelVelocityWidth) / 2.35) + 1
     print '*** MaxSigmas should be of the order of ',ApproxMaxSigmas,'to detect a line width FWHM ~ 1000 km/s (considering the reference frequency CRVAL3)***'
-    
+    GetValue(args.Cube)
     # Main loop to do the search
     for sigmas in range(args.MaxSigmas):
         SearchLine(args.Cube,args.OutputPath,args.MinSN,sigmas,UseMask,args.ContinuumImage,args.MaskSN)

@@ -315,7 +315,7 @@ def GetPoissonEstimates(bins,SNFinalPos,SNFinalNeg):
 	# 	popt, pcov = curve_fit(NegativeRate, bins[Nnegative>0], Nnegative[Nnegative>0])
 
 	MinSNtoFit = min(bins)
-	UsableBins = len(Nnegative[bins>=MinSNtoFit][Nnegative[bins>=MinSNtoFit]>=args.LimitN])
+	UsableBins = len(Nnegative[bins>=MinSNtoFit][Nnegative[bins>=MinSNtoFit]>args.LimitN])
 	print 'Min SN to do the fit:',MinSNtoFit,', Number of usable bins:',UsableBins
 	if UsableBins<6:
 		print '*** We are using ',UsableBins,' points for the fitting of the negative counts ***'

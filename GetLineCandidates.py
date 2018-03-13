@@ -534,7 +534,7 @@ plt.subplots_adjust(left=0.15, bottom=0.13, right=0.94, top=0.96,wspace=0.10, hs
 ax1 = plt.subplot(111)
 plt.semilogy(bins,NPositive,'-',color=cc[0],label='Positive Detections')
 plt.errorbar(bins[NnegativeReal>0],Nnegative[NnegativeReal>0],yerr=[Nnegative_e1[NnegativeReal>0],Nnegative_e2[NnegativeReal>0]],fmt='o',color=cc[1],label='Negative Detections')
-plt.semilogy(bins,NegativeFitted,'-',color=cc[2],label='Fitted Negative Estimate')
+plt.semilogy(bins,NegativeFitted,'-',color=cc[2],label='Fitted negative underlying rate')
 plt.xlabel('S/N',fontsize=20)
 plt.ylabel('N',fontsize=20)
 plt.legend(loc=0,fontsize=args.LegendFontSize,ncol=1)

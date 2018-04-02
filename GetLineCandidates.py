@@ -322,7 +322,7 @@ def GetPoissonEstimates(bins,SNFinalPos,SNFinalNeg):
 		print '*** We usually get good results with 6 points, try reducing the parameter -MinSN ***'
 	while UsableBins>6:
 		MinSNtoFit = MinSNtoFit + 0.1
-		UsableBins = len(Nnegative[bins>=MinSNtoFit][Nnegative[bins>=MinSNtoFit]>=args.LimitN])
+		UsableBins = len(Nnegative[bins>=MinSNtoFit][Nnegative[bins>=MinSNtoFit]>args.LimitN])
 		print 'Min SN to do the fit:',MinSNtoFit,', Number of usable bins:',UsableBins
 		if MinSNtoFit>max(bins):
 			print 'No negative points to do the fit'

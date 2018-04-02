@@ -329,10 +329,10 @@ def GetPoissonEstimates(bins,SNFinalPos,SNFinalNeg):
 			exit()
 
 	try:
-		popt, pcov = curve_fit(NegativeRate, bins[bins>=MinSNtoFit][Nnegative[bins>=MinSNtoFit]>args.LimitN], Nnegative[bins>=MinSNtoFit][Nnegative[bins>=MinSNtoFit]>args.LimitN])
+		popt, pcov = curve_fit(NegativeRate, bins[bins>=MinSNtoFit][Nnegative[bins>=MinSNtoFit]>args.LimitN], Nnegative[bins>=MinSNtoFit][Nnegative[bins>=MinSNtoFit]>args.LimitN],p0=[1e6,1])
 	except:
 		print 'Fitting failed for LimitN:'+str(args.LimitN)+' and '+str(args.MinSN)+'... Will force LimitN=0'
-		popt, pcov = curve_fit(NegativeRate, bins[Nnegative>0], Nnegative[Nnegative>0])	
+		popt, pcov = curve_fit(NegativeRate, bins[Nnegative>0], Nnegative[Nnegative>0],p0=[1e6,1])	
 
 
 	NegativeFitted = NegativeRate(bins,popt[0],popt[1])

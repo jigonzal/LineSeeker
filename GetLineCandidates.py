@@ -87,13 +87,44 @@ Modifictions to the plots.
 
 ---------------------------------------------------------------------------------------------
 
+v0.9
+I have modified the parameter EPS for DBSCAN. This parameter determines how close two detection can be from each other. 
+Now the separation depends on the number of pixels per bmaj. 
+
+---------------------------------------------------------------------------------------------
+
+
 '''
+
+def GetPixelsPerBMAJ(CubePath):
+    hdulist =   fits.open(CubePath,memmap=True)
+    head = hdulist[0].header
+    data = hdulist[0].data[0]
+    try:
+        BMAJ = hdulist[1].data.field('BMAJ')
+        BMIN = hdulist[1].data.field('BMIN')
+        BPA = hdulist[1].data.field('BPA')
+    except:
+        BMAJ = []
+        BMIN = []
+        BPA = []
+        for i in range(len(data)):
+            BMAJ.append(head['BMAJ']*3600.0)
+            BMIN.append(head['BMIN']*3600.0)
+            BPA.append(head['BPA'])
+        BMAJ = np.array(BMAJ)
+        BMIN = np.array(BMIN)
+        BPA = np.array(BPA)
+    pix_size = head['CDELT2']*3600.0
+    return max(BMAJ/pix_size)
+
+
 
 def NegativeRate(SNR,N,sigma):
 	return N*np.exp(-1.0*np.power(SNR,2)/(2.0*np.power(sigma,2)))
 
 
-def get_final_SN(SourcesTotal):
+def get_final_SN(SourcesTotal,PixelsPerBMAJ):
 	COORD = []
 	X = []
 	Y = []
@@ -115,7 +146,7 @@ def get_final_SN(SourcesTotal):
 	SN = np.array(SN_array)
 	purity = np.array(purity)
 
-	db = DBSCAN(eps=10, min_samples=1,leaf_size=30).fit(COORD)
+	db = DBSCAN(eps=PixelsPerBMAJ, min_samples=1,leaf_size=30).fit(COORD)
 	core_samples_mask = np.zeros_like(db.labels_, dtype=bool)
 	core_samples_mask[db.core_sample_indices_] = True
 	labels = db.labels_
@@ -147,7 +178,7 @@ def get_final_SN(SourcesTotal):
 	FinalSN = FinalSN[np.argsort(FinalSN)]
 	return FinalSN
 
-def get_sources(files,minSN):
+def get_sources(files,minSN,PixelsPerBMAJ):
 	Sources = []
 	SourcesAux = []
 
@@ -190,7 +221,7 @@ def get_sources(files,minSN):
 		SN = np.array(SN_array)
 
 		if len(COORD)>0:
-			db = DBSCAN(eps=10, min_samples=1,leaf_size=30).fit(COORD)
+			db = DBSCAN(eps=PixelsPerBMAJ, min_samples=1,leaf_size=30).fit(COORD)
 			core_samples_mask = np.zeros_like(db.labels_, dtype=bool)
 			core_samples_mask[db.core_sample_indices_] = True
 			labels = db.labels_
@@ -207,7 +238,7 @@ def get_sources(files,minSN):
 	Sources = SourcesAux
 	return Sources
 
-def GetFinalCandidates(SourcesTotalPos):
+def GetFinalCandidates(SourcesTotalPos,PixelsPerBMAJ):
 	COORD = []
 	X = []
 	Y = []
@@ -235,7 +266,7 @@ def GetFinalCandidates(SourcesTotalPos):
 	purityNegative = np.array(purityNegative)
 	purityPoisson = np.array(purityPoisson)
 
-	db = DBSCAN(eps=10, min_samples=1,leaf_size=30).fit(COORD)
+	db = DBSCAN(eps=PixelsPerBMAJ, min_samples=1,leaf_size=30).fit(COORD)
 	core_samples_mask = np.zeros_like(db.labels_, dtype=bool)
 	core_samples_mask[db.core_sample_indices_] = True
 	labels = db.labels_
@@ -366,7 +397,7 @@ parser.add_argument('-LegendFontSize', type=float, default='10.0', required=Fals
 
 args = parser.parse_args()
 
-
+PixelsPerBMAJ = GetPixelsPerBMAJ(args.Cube)
 
 w, h = 1.0*plt.figaspect(0.9)
 fig = plt.figure(figsize=(w,h))
@@ -384,21 +415,21 @@ ax1 = plt.subplot(111)
 
 for i in range(args.MaxSigmas):
 	print 50*'-'
-	Sources_real = np.array(get_sources([args.LineSearchPath+'/line_dandidates_sn_sigmas'+str(i)+'_pos.dat'],args.MinSN))
-	Sources_realNeg = np.array(get_sources([args.LineSearchPath+'/line_dandidates_sn_sigmas'+str(i)+'_neg.dat'],args.MinSN))
+	Sources_real = np.array(get_sources([args.LineSearchPath+'/line_dandidates_sn_sigmas'+str(i)+'_pos.dat'],args.MinSN,PixelsPerBMAJ))
+	Sources_realNeg = np.array(get_sources([args.LineSearchPath+'/line_dandidates_sn_sigmas'+str(i)+'_neg.dat'],args.MinSN,PixelsPerBMAJ))
 
 	simulations_folders = glob.glob(args.SimulationPath+'/simul_*')
 	SimulatedSources = []
 	for folder in simulations_folders:
 		try:
-			aux = get_sources([folder+'/line_dandidates_sn_sigmas'+str(i)+'_pos.dat'],args.MinSN)
+			aux = get_sources([folder+'/line_dandidates_sn_sigmas'+str(i)+'_pos.dat'],args.MinSN,PixelsPerBMAJ)
 			aux_sn = []
 			for source in aux:
 				aux_sn.append(max(source[3]))
 			aux_sn = np.array(aux_sn)
 			SimulatedSources.append(aux_sn)
 
-			aux = get_sources([folder+'/line_dandidates_sn_sigmas'+str(i)+'_neg.dat'],args.MinSN)
+			aux = get_sources([folder+'/line_dandidates_sn_sigmas'+str(i)+'_neg.dat'],args.MinSN,PixelsPerBMAJ)
 			aux_sn = []
 			for source in aux:
 				aux_sn.append(max(source[3]))
@@ -460,8 +491,8 @@ for i in range(args.MaxSigmas):
 			SourcesTotalNeg.append(NewSource)
 
 
-SNFinalPos = get_final_SN(SourcesTotalPos)
-SNFinalNeg = get_final_SN(SourcesTotalNeg)
+SNFinalPos = get_final_SN(SourcesTotalPos,PixelsPerBMAJ)
+SNFinalNeg = get_final_SN(SourcesTotalNeg,PixelsPerBMAJ)
 
 bins = np.arange(args.MinSN,7.1,0.1)
 
@@ -474,14 +505,14 @@ counter = 1
 for folder in simulations_folders:
 	print folder,counter,'/',len(simulations_folders)
 	try:
-		aux = get_sources(glob.glob(folder+'/*_pos.dat'),args.MinSN)
+		aux = get_sources(glob.glob(folder+'/*_pos.dat'),args.MinSN,PixelsPerBMAJ)
 		aux_sn = []
 		for source in aux:
 			aux_sn.append(max(source[3]))
 		aux_sn = np.array(aux_sn)
 		SimulatedSourcesTotal.append(aux_sn)
 
-		aux = get_sources(glob.glob(folder+'/*_neg.dat'),args.MinSN)
+		aux = get_sources(glob.glob(folder+'/*_neg.dat'),args.MinSN,PixelsPerBMAJ)
 		aux_sn = []
 		for source in aux:
 			aux_sn.append(max(source[3]))
@@ -589,7 +620,7 @@ Output.close()
 
 ######## Positives ########
 
-FinalX,FinalY,FinalChannel,FinalPuritySimulation,FinalPurityNegative,FinalPurityPoisson,FinalSN = GetFinalCandidates(SourcesTotalPos)
+FinalX,FinalY,FinalChannel,FinalPuritySimulation,FinalPurityNegative,FinalPurityPoisson,FinalSN = GetFinalCandidates(SourcesTotalPos,PixelsPerBMAJ)
 
 hdulist =   fits.open(args.Cube,memmap=True)
 w = wcs.WCS(hdulist[0].header)
@@ -610,7 +641,7 @@ Output.close()
 
 
 ######## Negatives ########
-FinalX,FinalY,FinalChannel,FinalPuritySimulation,FinalPurityNegative,FinalPurityPoisson,FinalSN = GetFinalCandidates(SourcesTotalNeg)
+FinalX,FinalY,FinalChannel,FinalPuritySimulation,FinalPurityNegative,FinalPurityPoisson,FinalSN = GetFinalCandidates(SourcesTotalNeg,PixelsPerBMAJ)
 
 [ra,dec,freq,stoke] =  w.all_pix2world(FinalX,FinalY,FinalChannel,np.zeros_like(FinalChannel),0)
 c = []
@@ -625,4 +656,6 @@ for i in range(len(FinalX)):
   i = len(FinalX)-i-1
   Output.write(args.SurveyName+'-'+args.Wavelength+'mm.NEG.'+str(k).zfill(2)+' '+c[i].to_string('hmsdms',sep=':',precision=3).split()[0]+' '+c[i].to_string('hmsdms',sep=':',precision=3).split()[1]+' '+str(round(freq[i]/1e9,3)).zfill(3)+' '+str(round(FinalSN[i],1))+' '+str(round(FinalPuritySimulation[i],2))+' '+str(round(FinalPurityNegative[i],2))+' '+str(round(FinalPurityPoisson[i],2))+'\n')
 Output.close()
+
+print 'EPS used in DBSCAN:',PixelsPerBMAJ
 

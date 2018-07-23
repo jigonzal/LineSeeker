@@ -90,6 +90,7 @@ Modifictions to the plots.
 v0.9
 I have modified the parameter EPS for DBSCAN. This parameter determines how close two detection can be from each other. 
 Now the separation depends on the number of pixels per bmaj. 
+If MaxSigmas is equal to 1 (Continuum images) then eps is set to 1.
 
 ---------------------------------------------------------------------------------------------
 
@@ -399,6 +400,10 @@ args = parser.parse_args()
 
 PixelsPerBMAJ = GetPixelsPerBMAJ(args.Cube)
 
+if args.MaxSigmas == 1:
+	PixelsPerBMAJ = 1.0
+	
+	
 w, h = 1.0*plt.figaspect(0.9)
 fig = plt.figure(figsize=(w,h))
 plt.subplots_adjust(left=0.15, bottom=0.13, right=0.94, top=0.96,wspace=0.10, hspace=0.2)

@@ -14,3 +14,5 @@ The workflow goes as follow:
 
 TODO:
 - As of now the clustering algorithm is tuned to work with pixel ~1/5 of the beam size and channel width of around 1/3 to 1/5 of the minimum line width. In the future I will generalize the parameters for DBSCAN (eps=10, min_samples=1,leaf_size=30) or leave them as required parameters.
+
+Update: I have modified the code so the eps parameter is equal to bmaj/PixelSize.

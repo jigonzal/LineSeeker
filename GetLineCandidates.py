@@ -83,7 +83,7 @@ to better fit the tail of negative counts without being much affected by low num
 to the low S/N regime.
 I chose 6 bins because is double the degree of freedom of the function to fit (2+1). 
 
-Modifictions to the plots.
+Modifications to the plots.
 
 ---------------------------------------------------------------------------------------------
 
@@ -94,6 +94,11 @@ If MaxSigmas is equal to 1 (Continuum images) then eps is set to 1.
 
 ---------------------------------------------------------------------------------------------
 
+v1.0
+I have added new conditions for the fit of negative counts. Now the code will better handle
+the cases with low independent elements and force reasonable fits to avoid obtaining false Ppoisson=0
+
+---------------------------------------------------------------------------------------------
 
 '''
 
@@ -360,12 +365,62 @@ def GetPoissonEstimates(bins,SNFinalPos,SNFinalNeg):
 			print 'No negative points to do the fit'
 			exit()
 
-	try:
-		popt, pcov = curve_fit(NegativeRate, bins[bins>=MinSNtoFit][Nnegative[bins>=MinSNtoFit]>args.LimitN], Nnegative[bins>=MinSNtoFit][Nnegative[bins>=MinSNtoFit]>args.LimitN],p0=[1e6,1])
-	except:
-		print 'Fitting failed for LimitN:'+str(args.LimitN)+' and '+str(args.MinSN)+'... Will force LimitN=0'
-		popt, pcov = curve_fit(NegativeRate, bins[Nnegative>0], Nnegative[Nnegative>0],p0=[1e6,1])	
 
+	if UsableBins>=3:
+		try:
+			popt, pcov = curve_fit(NegativeRate, bins[bins>=MinSNtoFit][Nnegative[bins>=MinSNtoFit]>args.LimitN], Nnegative[bins>=MinSNtoFit][Nnegative[bins>=MinSNtoFit]>args.LimitN],p0=[1e6,1])
+			perr = np.sqrt(np.diag(pcov))
+			# print popt,popt/perr,not np.isfinite(perr[0])
+			CounterFitTries = 0
+			while not np.isfinite(perr[0]):
+				print '*** curve_fit failed to converge ... ***'
+				NewParameter1 = np.random.uniform(10,1e9)
+				NewParameter2 = np.random.uniform(0.1,10)
+				print '*** New Initial Estimates for the fitting (random):',NewParameter1,NewParameter2,' ***'
+				popt, pcov = curve_fit(NegativeRate, bins[bins>=MinSNtoFit][Nnegative[bins>=MinSNtoFit]>args.LimitN], Nnegative[bins>=MinSNtoFit][Nnegative[bins>=MinSNtoFit]>args.LimitN],p0=[NewParameter1,NewParameter2])
+				perr = np.sqrt(np.diag(pcov))
+				print '*** New Results:',popt[0],' +/- ',perr[0],popt[1],' +/- ',perr[1],' ***'
+				CounterFitTries += 1
+				if CounterFitTries >100:
+					print '*** Over 100 attemps and not good fit *** '
+					break
+
+		except:
+			print 'Fitting failed for LimitN:'+str(args.LimitN)+' and '+str(args.MinSN)+'... Will force LimitN=0'
+			popt, pcov = curve_fit(NegativeRate, bins[Nnegative>0], Nnegative[Nnegative>0],p0=[1e6,1])	
+			perr = np.sqrt(np.diag(pcov))
+			# print popt,popt/perr,not np.isfinite(perr[0])
+			CounterFitTries = 0
+			while not np.isfinite(perr[0]):
+				print '*** curve_fit failed to converge ... ***'
+				NewParameter1 = np.random.uniform(10,1e9)
+				NewParameter2 = np.random.uniform(0.1,10)
+				print '*** New Initial Estimates for the fitting (random):',NewParameter1,NewParameter2,' ***'
+				popt, pcov = curve_fit(NegativeRate, bins[Nnegative>0], Nnegative[Nnegative>0],p0=[NewParameter1,NewParameter2])
+				perr = np.sqrt(np.diag(pcov))
+				print '*** New Results:',popt[0],' +/- ',perr[0],popt[1],' +/- ',perr[1],' ***'
+				CounterFitTries += 1
+				if CounterFitTries >100:
+					print '*** Over 100 attemps and not good fit *** '
+					break
+	else:
+		print 'Number of usable bins is less than 3 for LimitN:'+str(args.LimitN)+' and '+str(args.MinSN)+'... Will force LimitN=0'
+		popt, pcov = curve_fit(NegativeRate, bins[Nnegative>0], Nnegative[Nnegative>0],p0=[1e6,1])	
+		perr = np.sqrt(np.diag(pcov))
+		# print popt,popt/perr,not np.isfinite(perr[0])
+		CounterFitTries = 0
+		while not np.isfinite(perr[0]):
+			print '*** curve_fit failed to converge ... ***'
+			NewParameter1 = np.random.uniform(10,1e9)
+			NewParameter2 = np.random.uniform(0.1,10)
+			print '*** New Initial Estimates for the fitting (random):',NewParameter1,NewParameter2,' ***'
+			popt, pcov = curve_fit(NegativeRate, bins[Nnegative>0], Nnegative[Nnegative>0],p0=[NewParameter1,NewParameter2])
+			perr = np.sqrt(np.diag(pcov))
+			print '*** New Results:',popt[0],' +/- ',perr[0],popt[1],' +/- ',perr[1],' ***'
+			CounterFitTries += 1
+			if CounterFitTries >100:
+				print '*** Over 100 attemps and not good fit *** '
+				break
 
 	NegativeFitted = NegativeRate(bins,popt[0],popt[1])
 
@@ -379,10 +434,7 @@ def GetPoissonEstimates(bins,SNFinalPos,SNFinalNeg):
 	ProbPoisson = np.array(ProbPoisson)
 	ProbNegativeOverPositive = np.array(ProbNegativeOverPositive)
 	PurityPoisson = np.array(PurityPoisson)
-
 	return bins,ProbPoisson,ProbNegativeOverPositive,PurityPoisson,NPositive,Nnegative,Nnegative_e1,Nnegative_e2,NegativeFitted,NnegativeReal
-
-
 
 
 parser = argparse.ArgumentParser(description="Python script that finds line emission-like features in an ALMA data cube")

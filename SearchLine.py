@@ -2,6 +2,7 @@
 # warnings.filterwarnings("ignore")
 import numpy as np
 import astropy.io.fits as fits
+from astropy.table import Table
 import os
 import scipy.ndimage
 import argparse
@@ -26,7 +27,9 @@ Now it gives the option to use the continuum image to mask continuum sources.
 v0.2
 Updated documentation and changed the naming convention where the version will be in the header.
 
-
+---------------------------------------------------------------------------------------------
+v0.3
+Change to use fits files as the output instead of ascii.
 '''
 
 def GetValue(CubePath):
@@ -62,15 +65,14 @@ def GetValue(CubePath):
     # print len(data[0][np.isfinite(data[0])].flatten())*1.0/factor[0]*(len(data)/ApproxMaxSigmas)
     return 
 
-def SearchLine(CubePath,FolderForLinesFiles,MinSN,sigmas,UseMask,ContinuumImage,MaskSN):
+def SearchLine(CubePath,FolderForLinesFiles,MinSN,sigmas,UseMask,ContinuumImage,MaskSN,Kernel):
 
     SN = np.array([])
     SNneg = np.array([])
 
     print 100*'#'
     print 'Starting search of lines with sigma equal to',sigmas,'channels'
-    sn_linecandidates_pos = open(FolderForLinesFiles+'/line_dandidates_sn_sigmas'+str(sigmas)+'_pos.dat','w')
-    sn_linecandidates_neg = open(FolderForLinesFiles+'/line_dandidates_sn_sigmas'+str(sigmas)+'_neg.dat','w')
+
 
 
     hdulist =   fits.open(CubePath,memmap=True)
@@ -85,33 +87,53 @@ def SearchLine(CubePath,FolderForLinesFiles,MinSN,sigmas,UseMask,ContinuumImage,
         FinalRMS = np.nanstd(DataMask[DataMask<MaskSN*InitialRMS])
         Mask = np.where(DataMask>=MaskSN*FinalRMS,True,False)
 
-    data = scipy.ndimage.filters.gaussian_filter(data, [sigmas,0,0],mode='constant', cval=0.0, truncate=4.0)
+    if Kernel=='Gaussian' or Kernel=='guassian':
+        data = scipy.ndimage.filters.gaussian_filter(data, [sigmas,0,0],mode='constant', cval=0.0, truncate=4.0)
+    else:
+        ZeroChannel = []
+        NanChannel = []
+        for ch in data:
+            if len(ch[ch==0].flatten())*1.0>0.9*(len(ch.flatten())):
+                ZeroChannel.append(True)
+            else:
+                ZeroChannel.append(False)
+            if len(ch[np.isnan(ch)].flatten())*1.0>0.9*(len(ch.flatten())):
+                NanChannel.append(True)
+            else:
+                NanChannel.append(False)
+
+        ZeroChannel = np.array(ZeroChannel)
+        NanChannel = np.array(NanChannel)
+        data = scipy.ndimage.filters.uniform_filter(data, [sigmas,0,0],mode='mirror',cval=0.0)
+        data[ZeroChannel] = 0
+        data[NanChannel] = np.nan
+
+
+    # newdata = []
+    # for l in range(len(data)):
+    #     aux = data[max(l - sigmas,0):min(l + 1 + sigmas,len(data)-1)].sum(axis=0)
+    #     newdata.append(aux)
+    # data = np.array(newdata)
 
     for i in range(len(data)):
         if UseMask:
             data[i][Mask] = np.nan
-	InitialRMS = np.nanstd(data[i])
+        InitialRMS = np.nanstd(data[i])
         FinalRMS = np.nanstd(data[i][data[i]<5.0*InitialRMS])
         data[i] = data[i]/FinalRMS
     pix1,pix2,pix3 = np.where(data>=MinSN)
-    sn_linecandidates_pos.write('-----------------------------------------------------------\n')
-    sn_linecandidates_pos.write(' spw0 sigma'+str(sigmas)+'\n')
-    sn_linecandidates_pos.write('max_negative_sn: '+str(MinSN)+'\n')
+    t = Table([pix1, pix3, pix2,data[pix1,pix2,pix3]], names=('Channel', 'Xpix', 'Ypix','SN'))
+    t.write(FolderForLinesFiles+'/line_dandidates_sn_sigmas'+str(sigmas)+'_pos.fits', format='fits',overwrite=True)
     print 'Positive pixels in search for Sigmas:',sigmas,'N:',len(pix2)
-    for k in range(len(pix2)):
-      sn_linecandidates_pos.write(str(pix1[k])+' '+str(pix3[k])+' '+str(pix2[k])+' SN:'+str(data[pix1[k],pix2[k],pix3[k]])+'\n')
-    sn_linecandidates_pos.close()
+
 
     data = -1.0*data
     pix1,pix2,pix3 = np.where((data)>=MinSN)
-    sn_linecandidates_neg.write('-----------------------------------------------------------\n')
-    sn_linecandidates_neg.write(' spw0 sigma'+str(sigmas)+'\n')
-    sn_linecandidates_neg.write('max_negative_sn: '+str(MinSN)+'\n')
-    print 'Negative pixels in search for Sigmas:',sigmas,'N:',len(pix2)
-    for k in range(len(pix2)):
-      sn_linecandidates_neg.write(str(pix1[k])+' '+str(pix3[k])+' '+str(pix2[k])+' SN:'+str(data[pix1[k],pix2[k],pix3[k]])+'\n')
-    sn_linecandidates_neg.close()
+    t = Table([pix1, pix3, pix2,data[pix1,pix2,pix3]], names=('Channel', 'Xpix', 'Ypix','SN'))
+    t.write(FolderForLinesFiles+'/line_dandidates_sn_sigmas'+str(sigmas)+'_neg.fits', format='fits',overwrite=True)
     data = 0
+    print 'Negative pixels in search for Sigmas:',sigmas,'N:',len(pix2)
+
 
     return
 
@@ -126,6 +148,7 @@ def main():
     parser.add_argument('-ContinuumImage', type=str, default = 'Continuum.fits', required=False,help = 'Continuum image to use to create a mask. [Default:Continuum.fits]')
     parser.add_argument('-MaskSN', type=float, default = 5.0, required=False,help = 'S/N value to use as limit to create mask from continuum image. [Default:5.0]')
     parser.add_argument('-UseMask', type=str, default = 'False',choices=['True','False'], required=False,help = 'S/N value to use as limit to create mask from continuum image. [Default:5.0]')
+    parser.add_argument('-Kernel', type=str, default = 'Gaussian',choices=['Gaussian','gaussian','Tophat','tophat'], required=False,help = 'Type of kernel to use for the convolution. [Default:Gaussian]')
     args = parser.parse_args()
 
     #Checking input arguments
@@ -180,6 +203,11 @@ def main():
                 else:
                     print '*** The value for MaskSN of',args.MinSN,' is ok ***'
 
+    if args.Kernel=='Gaussian' or args.Kernel=='gaussian':
+        print '*** Using Gaussian Kernel ***'
+    else:
+        print '*** Using Tophat Kernel ***'
+
 
     #finding channel width
     Header = fits.open(args.Cube)[0].header
@@ -187,10 +215,17 @@ def main():
     ChannelSpacing = Header['CDELT3']
     ApproxChannelVelocityWidth = ( abs(ChannelSpacing)/RefFrequency ) * 3e5
     ApproxMaxSigmas = int ((1000.0/ApproxChannelVelocityWidth) / 2.35) + 1
-    print '*** MaxSigmas should be of the order of ',ApproxMaxSigmas,'to detect a line width FWHM ~ 1000 km/s (considering the reference frequency CRVAL3)***'
-    GetValue(args.Cube)
+    if args.Kernel=='Gaussian' or args.Kernel=='gaussian':
+        print '*** MaxSigmas should be of the order of ',ApproxMaxSigmas,'to detect a line width FWHM ~ 1000 km/s ***'
+    else:
+        ApproxMaxSigmas = int ((1000.0/ApproxChannelVelocityWidth))+1
+        print '*** MaxSigmas should be of the order of ',ApproxMaxSigmas,'to detect a line width of ~ 1000 km/s for the Tophat Kernel (considering the reference frequency CRVAL3)***'
+    try:
+        GetValue(args.Cube)
+    except:
+        print '*** problems reading header ***'
     # Main loop to do the search
     for sigmas in range(args.MaxSigmas):
-        SearchLine(args.Cube,args.OutputPath,args.MinSN,sigmas,UseMask,args.ContinuumImage,args.MaskSN)
+        SearchLine(args.Cube,args.OutputPath,args.MinSN,sigmas,UseMask,args.ContinuumImage,args.MaskSN,args.Kernel)
 
 main()

@@ -280,9 +280,9 @@ for i in range(args.MaxSigmas):
 	for source in Sources_real:
 		if max(source[3])>=args.MinSN:
 			sn = max(source[3])
-
-			aux,ErrorPSimulation_1,ErrorPSimulation_2 = LineSeekerFunctions.GetPoissonErrorGivenMeasurements(np.interp(sn,bins,y)*N_simulations2,N_simulations2)
-			if N_simulations2==0:
+			if N_simulations2>0:
+				aux,ErrorPSimulation_1,ErrorPSimulation_2 = LineSeekerFunctions.GetPoissonErrorGivenMeasurements(np.interp(sn,bins,y)*N_simulations2,N_simulations2)
+			else:
 				ErrorPSimulation_1 = 0.0
 				ErrorPSimulation_2 = 0.0
 

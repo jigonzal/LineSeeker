@@ -466,7 +466,7 @@ if args.GetTotalEstimate == 'True':
 	yTotal[yTotal>1] = 1
 	ax1.plot(bins,yTotal,'--',color='green',label='Simulations Total',lw=3)
 
-	bins,ProbPoisson,ProbNegativeOverPositive,PurityPoisson,NPositive,Nnegative,Nnegative_e1,Nnegative_e2,NegativeFitted,NnegativeReal,ProbPoissonE1,ProbPoissonE2 = LineSeekerFunctions.GetPoissonEstimates(bins,SNFinalPos,SNFinalNeg,args.LimitN,args.MinSN)
+	bins,ProbPoisson,ProbNegativeOverPositive,PurityPoisson,NPositive,Nnegative,Nnegative_e1,Nnegative_e2,NegativeFitted,NnegativeReal,ProbPoissonE1,ProbPoissonE2,ProbNegativeOverPositiveE1,ProbNegativeOverPositiveE2,ProbNegativeOverPositiveDif,ProbNegativeOverPositiveDifE1,ProbNegativeOverPositiveDifE2,ProbPoissonExpected,ProbPoissonExpectedE1,ProbPoissonExpectedE2 = LineSeekerFunctions.GetPoissonEstimates(bins,SNFinalPos,SNFinalNeg,args.LimitN,args.MinSN)
 	ProbNegativeOverPositive[ProbNegativeOverPositive>1] = 1
 	ProbPoisson[ProbPoisson>1] = 1
 

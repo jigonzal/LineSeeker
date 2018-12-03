@@ -159,6 +159,12 @@ bins = np.arange(args.MinSN,8.1,0.1)
 SourcesTotalPos = []
 SourcesTotalNeg = []
 
+
+if args.MaxSigmas > 1:
+	FactorLEE = 1.0 + (np.log(args.MaxSigmas-1.0) + 1.0/(2.0*(args.MaxSigmas-1)) + 0.577)
+else:
+	FactorLEE = 1.0
+
 w, h = 1.0*plt.figaspect(0.9)
 fig1 = plt.figure(figsize=(w,h))
 fig1.subplots_adjust(left=0.15, bottom=0.13, right=0.94, top=0.96,wspace=0.10, hspace=0.2)
@@ -255,18 +261,37 @@ for i in range(args.MaxSigmas):
 	SNReal = SNReal[np.argsort(SNReal)][::-1]
 	Sources_realNeg = Sources_realNeg[np.argsort(SNRealNeg)][::-1]
 	SNRealNeg = SNRealNeg[np.argsort(SNRealNeg)][::-1]
+
+	# print type(SNReal),type(SNReal[0]),SNReal
+	SNReal = 1.0*np.around(SNReal,1)
+	SNRealNeg = 1.0*np.around(SNRealNeg,1)
+	SNReal = SNReal.astype(np.float32)
+	SNRealNeg = SNRealNeg.astype(np.float32)
+
+
 	bins,ProbPoisson,ProbNegativeOverPositive,PurityPoisson,NPositive,Nnegative,Nnegative_e1,Nnegative_e2,NegativeFitted,NnegativeReal,ProbPoissonE1,ProbPoissonE2,ProbNegativeOverPositiveE1,ProbNegativeOverPositiveE2,ProbNegativeOverPositiveDif,ProbNegativeOverPositiveDifE1,ProbNegativeOverPositiveDifE2,ProbPoissonExpected,ProbPoissonExpectedE1,ProbPoissonExpectedE2 = LineSeekerFunctions.GetPoissonEstimates(bins,SNReal,SNRealNeg,args.LimitN,args.MinSN)
+	NPositive_e1 = []
+	NPositive_e2 = []
+
+	for k in NPositive:
+		aux = scipy.special.gammaincinv(k + 1, [0.16,0.5,0.84])
+		NPositive_e1.append(aux[1]-aux[0])
+		NPositive_e2.append(aux[2]-aux[1])
+	NPositive_e1 = np.array(NPositive_e1)
+	NPositive_e2 = np.array(NPositive_e2)
 
 	w, h = 1.0*plt.figaspect(0.9)
 	fig2 = plt.figure(figsize=(w,h))
 	fig2.subplots_adjust(left=0.15, bottom=0.13, right=0.94, top=0.96,wspace=0.10, hspace=0.2)
 	ax2 = fig2.add_subplot(111)
 
-	ax2.semilogy(bins,NPositive,'-',color=cc[0],label='Positive Detections')
-	ax2.errorbar(bins[NnegativeReal>0],Nnegative[NnegativeReal>0],yerr=[Nnegative_e1[NnegativeReal>0],Nnegative_e2[NnegativeReal>0]],fmt='o',color=cc[1],label='Negative Detections for sigmas:'+str(i))
-	ax2.semilogy(bins,NegativeFitted,'-',color=cc[2],label='Fitted negative underlying rate')
+
+	# ax2.semilogy(bins,NPositive,'o',color=cc[0],label='Positive Detections')
+	ax2.errorbar(bins[NPositive>0],NPositive[NPositive>0],yerr=[NPositive_e1[NPositive>0],NPositive_e2[NPositive>0]],fmt='o',color=cc[0],label='Positive Detections',zorder=0)
+	ax2.errorbar(bins[NnegativeReal>0],Nnegative[NnegativeReal>0],yerr=[Nnegative_e1[NnegativeReal>0],Nnegative_e2[NnegativeReal>0]],fmt='o',color=cc[1],label='Negative Detections for sigmas:'+str(i),zorder=0)
+	ax2.semilogy(bins,NegativeFitted,'-',color=cc[2],label='Fitted negative underlying rate',zorder=1)
 	ax2.set_xlabel('S/N',fontsize=20)
-	ax2.set_ylabel('N',fontsize=20)
+	ax2.set_ylabel('N (>S/N)',fontsize=20)
 
 	if len(bins[NnegativeReal>0])>0:
 		ax2.legend(loc=0,fontsize=args.LegendFontSize,ncol=1)
@@ -279,7 +304,7 @@ for i in range(args.MaxSigmas):
 	
 	for source in Sources_real:
 		if max(source[3])>=args.MinSN:
-			sn = max(source[3])
+			sn = round(max(source[3]),1)
 			if N_simulations2>0:
 				aux,ErrorPSimulation_1,ErrorPSimulation_2 = LineSeekerFunctions.GetPoissonErrorGivenMeasurements(np.interp(sn,bins,y)*N_simulations2,N_simulations2)
 			else:
@@ -296,7 +321,7 @@ for i in range(args.MaxSigmas):
 			PNegativeDifTotalE1Real = np.interp(sn,bins,ProbNegativeOverPositiveDifE1)
 			PNegativeDifTotalE2Real = np.interp(sn,bins,ProbNegativeOverPositiveDifE2)
 
-			if N_simulations2>0:
+			if N_simulations2>0 and (len(SNReal[SNReal>=sn]) - len(SNReal[SNReal>=sn+0.1]))>0:
 				Rate = np.interp(sn,bins,yExpected) - np.interp(sn+0.1,bins,yExpected)
 				RateSigma = 0.5*np.sqrt(np.sum(np.power(np.array([np.interp(sn,bins,yExpectedSigma),np.interp(sn+0.1,bins,yExpectedSigma)]),2)))
 				auxSimulationExpected = [Rate - RateSigma,Rate,Rate + RateSigma]
@@ -311,7 +336,8 @@ for i in range(args.MaxSigmas):
 			PSimulationExpectedTotalReal = Psimexpected
 			PSimulationExpectedTotalE1Real = Psimexpected - Psimexpected1
 			PSimulationExpectedTotalE2Real = Psimexpected2 - Psimexpected
-			PPoissonExpectedTotalReal = np.interp(sn,bins,ProbPoissonExpected)
+			# PPoissonExpectedTotalReal = np.interp(sn,bins,ProbPoissonExpected)
+			PPoissonExpectedTotalReal = ProbPoissonExpected[index]
 			PPoissonExpectedTotalE1Real = ProbPoissonExpectedE1[index]
 			PPoissonExpectedTotalE2Real = ProbPoissonExpectedE2[index]
 
@@ -343,7 +369,7 @@ for i in range(args.MaxSigmas):
 
 	for source in Sources_realNeg:
 		if max(source[3])>=args.MinSN:
-			sn = max(source[3])
+			sn = round(max(source[3]),1)
 			if N_simulations2>0:
 				aux,ErrorPSimulation_1,ErrorPSimulation_2 = LineSeekerFunctions.GetPoissonErrorGivenMeasurements(np.interp(sn,bins,y)*N_simulations2,N_simulations2)
 			else:
@@ -360,7 +386,7 @@ for i in range(args.MaxSigmas):
 			PNegativeDifTotalE1Real = np.interp(sn,bins,ProbNegativeOverPositiveDifE1)
 			PNegativeDifTotalE2Real = np.interp(sn,bins,ProbNegativeOverPositiveDifE2)
 
-			if N_simulations2>0:
+			if N_simulations2>0 and (len(SNRealNeg[SNRealNeg>=sn]) - len(SNRealNeg[SNRealNeg>=sn+0.1]))>0:
 				Rate = np.interp(sn,bins,yExpected) - np.interp(sn+0.1,bins,yExpected)
 				RateSigma = 0.5*np.sqrt(np.sum(np.power(np.array([np.interp(sn,bins,yExpectedSigma),np.interp(sn+0.1,bins,yExpectedSigma)]),2)))
 				auxSimulationExpected = [Rate - RateSigma,Rate,Rate + RateSigma]
@@ -375,7 +401,8 @@ for i in range(args.MaxSigmas):
 			PSimulationExpectedTotalReal = Psimexpected
 			PSimulationExpectedTotalE1Real = Psimexpected - Psimexpected1
 			PSimulationExpectedTotalE2Real = Psimexpected2 - Psimexpected
-			PPoissonExpectedTotalReal = np.interp(sn,bins,ProbPoissonExpected)
+			# PPoissonExpectedTotalReal = np.interp(sn,bins,ProbPoissonExpected)
+			PPoissonExpectedTotalReal = ProbPoissonExpected[index]
 			PPoissonExpectedTotalE1Real = ProbPoissonExpectedE1[index]
 			PPoissonExpectedTotalE2Real = ProbPoissonExpectedE2[index]
 
@@ -494,7 +521,7 @@ if args.GetTotalEstimate == 'True':
 	ax1 = plt.subplot(111)
 	plt.semilogy(bins,NPositive,'-',color=cc[0],label='Positive Detections')
 	plt.errorbar(bins[NnegativeReal>0],Nnegative[NnegativeReal>0],yerr=[Nnegative_e1[NnegativeReal>0],Nnegative_e2[NnegativeReal>0]],fmt='o',color=cc[1],label='Negative Detections')
-	plt.semilogy(bins,NegativeFitted,'-',color=cc[2],label='Fitted negative underlying rate')
+	plt.semilogy(bins,NegativeFitted,'-',color=cc[2],label='Fitted negative underlying rate',zorder=1)
 	plt.xlabel('S/N',fontsize=20)
 	plt.ylabel('N',fontsize=20)
 	plt.legend(loc=0,fontsize=args.LegendFontSize,ncol=1)
@@ -559,6 +586,49 @@ else:
 
 FinalX,FinalY,FinalChannel,FinalPuritySimulation,FinalPurityNegative,FinalPurityPoisson,FinalSN,FinalPSimultionE1,FinalPSimultionE2,FinalPPoissonE1,FinalPPoissonE2,FinalPuritySimulationE1,FinalPuritySimulationE2,FinalpNegDiv,FinalpNegDivE1,FinalpNegDivE2,FinalpSimExp,FinalpSimExpE1,FinalpSimExpE2,FinalpPoiExp,FinalpPoiExpE1,FinalpPoiExpE2 = LineSeekerFunctions.GetFinalCandidates(SourcesTotalPos,PixelsPerBMAJ)
 
+FinalPuritySimulation = FinalPuritySimulation * FactorLEE
+FinalPurityNegative = FinalPurityNegative * FactorLEE
+FinalPurityPoisson = FinalPurityPoisson * FactorLEE
+FinalPSimultionE1 = FinalPSimultionE1 * FactorLEE
+FinalPSimultionE2 = FinalPSimultionE2 * FactorLEE
+FinalPPoissonE1 = FinalPPoissonE1 * FactorLEE
+FinalPPoissonE2 = FinalPPoissonE2 * FactorLEE
+FinalPuritySimulationE1 = FinalPuritySimulationE1 * FactorLEE
+FinalPuritySimulationE2 = FinalPuritySimulationE2 * FactorLEE
+
+FinalpNegDiv = FinalpNegDiv * FactorLEE
+FinalpNegDivE1 = FinalpNegDivE1 * FactorLEE
+FinalpNegDivE2 = FinalpNegDivE2 * FactorLEE
+FinalpSimExp = FinalpSimExp * FactorLEE
+FinalpSimExpE1 = FinalpSimExpE1 * FactorLEE
+FinalpSimExpE2 = FinalpSimExpE2 * FactorLEE
+FinalpPoiExp = FinalpPoiExp * FactorLEE
+FinalpPoiExpE1 = FinalpPoiExpE1 * FactorLEE
+FinalpPoiExpE2 = FinalpPoiExpE2 * FactorLEE
+
+FinalPuritySimulation[FinalPuritySimulation>1.0] = 1.0
+FinalPurityNegative[FinalPurityNegative>1.0] = 1.0
+FinalPurityPoisson[FinalPurityPoisson>1.0] = 1.0
+FinalpNegDiv[FinalpNegDiv>1.0] = 1.0
+FinalpSimExp[FinalpSimExp>1.0] = 1.0
+FinalpPoiExp[FinalpPoiExp>1.0] = 1.0
+
+FinalPSimultionE1[ (FinalPuritySimulation - FinalPSimultionE1) < 0] = FinalPuritySimulation[ (FinalPuritySimulation - FinalPSimultionE1) < 0]
+FinalPPoissonE1[ (FinalPurityPoisson - FinalPPoissonE1) < 0] = FinalPurityPoisson[ (FinalPurityPoisson - FinalPPoissonE1) < 0]
+FinalPuritySimulationE1[ (FinalPurityNegative - FinalPuritySimulationE1) < 0] = FinalPurityNegative[ (FinalPurityNegative - FinalPuritySimulationE1) < 0]
+FinalpNegDivE1[ (FinalpNegDiv - FinalpNegDivE1) < 0] = FinalpNegDiv[ (FinalpNegDiv - FinalpNegDivE1) < 0]
+FinalpSimExpE1[ (FinalpSimExp - FinalpSimExpE1) < 0] = FinalpSimExp[ (FinalpSimExp - FinalpSimExpE1) < 0]
+FinalpPoiExpE1[ (FinalpPoiExp - FinalpPoiExpE1) < 0] = FinalpPoiExp[ (FinalpPoiExp - FinalpPoiExpE1) < 0]
+
+FinalPSimultionE2[ (FinalPuritySimulation + FinalPSimultionE2) > 1] = 1.0 - FinalPuritySimulation[ (FinalPuritySimulation + FinalPSimultionE2) > 1]
+FinalPPoissonE2[ (FinalPurityPoisson + FinalPPoissonE2) > 1] = 1.0 - FinalPurityPoisson[ (FinalPurityPoisson + FinalPPoissonE2) > 1]
+FinalPuritySimulationE2[ (FinalPurityNegative + FinalPuritySimulationE2) > 1] = 1.0 - FinalPurityNegative[ (FinalPurityNegative + FinalPuritySimulationE2) > 1]
+FinalpNegDivE2[ (FinalpNegDiv + FinalpNegDivE2) > 1] = 1.0 - FinalpNegDiv[ (FinalpNegDiv + FinalpNegDivE2) > 1]
+FinalpSimExpE2[ (FinalpSimExp + FinalpSimExpE2) > 1] = 1.0 - FinalpSimExp[ (FinalpSimExp + FinalpSimExpE2) > 1]
+FinalpPoiExpE2[ (FinalpPoiExp + FinalpPoiExpE2) > 1] = 1.0 - FinalpPoiExp[ (FinalpPoiExp + FinalpPoiExpE2) > 1]
+
+
+
 hdulist =   fits.open(args.Cube,memmap=True)
 w = wcs.WCS(hdulist[0].header)
 
@@ -589,6 +659,50 @@ Output.close()
 
 ######## Negatives ########
 FinalX,FinalY,FinalChannel,FinalPuritySimulation,FinalPurityNegative,FinalPurityPoisson,FinalSN,FinalPSimultionE1,FinalPSimultionE2,FinalPPoissonE1,FinalPPoissonE2,FinalPuritySimulationE1,FinalPuritySimulationE2,FinalpNegDiv,FinalpNegDivE1,FinalpNegDivE2,FinalpSimExp,FinalpSimExpE1,FinalpSimExpE2,FinalpPoiExp,FinalpPoiExpE1,FinalpPoiExpE2 = LineSeekerFunctions.GetFinalCandidates(SourcesTotalNeg,PixelsPerBMAJ)
+
+
+FinalPuritySimulation = FinalPuritySimulation * FactorLEE
+FinalPurityNegative = FinalPurityNegative * FactorLEE
+FinalPurityPoisson = FinalPurityPoisson * FactorLEE
+FinalPSimultionE1 = FinalPSimultionE1 * FactorLEE
+FinalPSimultionE2 = FinalPSimultionE2 * FactorLEE
+FinalPPoissonE1 = FinalPPoissonE1 * FactorLEE
+FinalPPoissonE2 = FinalPPoissonE2 * FactorLEE
+FinalPuritySimulationE1 = FinalPuritySimulationE1 * FactorLEE
+FinalPuritySimulationE2 = FinalPuritySimulationE2 * FactorLEE
+
+FinalpNegDiv = FinalpNegDiv * FactorLEE
+FinalpNegDivE1 = FinalpNegDivE1 * FactorLEE
+FinalpNegDivE2 = FinalpNegDivE2 * FactorLEE
+FinalpSimExp = FinalpSimExp * FactorLEE
+FinalpSimExpE1 = FinalpSimExpE1 * FactorLEE
+FinalpSimExpE2 = FinalpSimExpE2 * FactorLEE
+FinalpPoiExp = FinalpPoiExp * FactorLEE
+FinalpPoiExpE1 = FinalpPoiExpE1 * FactorLEE
+FinalpPoiExpE2 = FinalpPoiExpE2 * FactorLEE
+
+FinalPuritySimulation[FinalPuritySimulation>1.0] = 1.0
+FinalPurityNegative[FinalPurityNegative>1.0] = 1.0
+FinalPurityPoisson[FinalPurityPoisson>1.0] = 1.0
+FinalpNegDiv[FinalpNegDiv>1.0] = 1.0
+FinalpSimExp[FinalpSimExp>1.0] = 1.0
+FinalpPoiExp[FinalpPoiExp>1.0] = 1.0
+
+FinalPSimultionE1[ (FinalPuritySimulation - FinalPSimultionE1) < 0] = FinalPuritySimulation[ (FinalPuritySimulation - FinalPSimultionE1) < 0]
+FinalPPoissonE1[ (FinalPurityPoisson - FinalPPoissonE1) < 0] = FinalPurityPoisson[ (FinalPurityPoisson - FinalPPoissonE1) < 0]
+FinalPuritySimulationE1[ (FinalPurityNegative - FinalPuritySimulationE1) < 0] = FinalPurityNegative[ (FinalPurityNegative - FinalPuritySimulationE1) < 0]
+FinalpNegDivE1[ (FinalpNegDiv - FinalpNegDivE1) < 0] = FinalpNegDiv[ (FinalpNegDiv - FinalpNegDivE1) < 0]
+FinalpSimExpE1[ (FinalpSimExp - FinalpSimExpE1) < 0] = FinalpSimExp[ (FinalpSimExp - FinalpSimExpE1) < 0]
+FinalpPoiExpE1[ (FinalpPoiExp - FinalpPoiExpE1) < 0] = FinalpPoiExp[ (FinalpPoiExp - FinalpPoiExpE1) < 0]
+
+FinalPSimultionE2[ (FinalPuritySimulation + FinalPSimultionE2) > 1] = 1.0 - FinalPuritySimulation[ (FinalPuritySimulation + FinalPSimultionE2) > 1]
+FinalPPoissonE2[ (FinalPurityPoisson + FinalPPoissonE2) > 1] = 1.0 - FinalPurityPoisson[ (FinalPurityPoisson + FinalPPoissonE2) > 1]
+FinalPuritySimulationE2[ (FinalPurityNegative + FinalPuritySimulationE2) > 1] = 1.0 - FinalPurityNegative[ (FinalPurityNegative + FinalPuritySimulationE2) > 1]
+FinalpNegDivE2[ (FinalpNegDiv + FinalpNegDivE2) > 1] = 1.0 - FinalpNegDiv[ (FinalpNegDiv + FinalpNegDivE2) > 1]
+FinalpSimExpE2[ (FinalpSimExp + FinalpSimExpE2) > 1] = 1.0 - FinalpSimExp[ (FinalpSimExp + FinalpSimExpE2) > 1]
+FinalpPoiExpE2[ (FinalpPoiExp + FinalpPoiExpE2) > 1] = 1.0 - FinalpPoiExp[ (FinalpPoiExp + FinalpPoiExpE2) > 1]
+
+
 
 
 [ra,dec,freq,stoke] =  w.all_pix2world(FinalX,FinalY,FinalChannel,np.zeros_like(FinalChannel),0)

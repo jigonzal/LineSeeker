@@ -217,7 +217,12 @@ def GetPixelsPerBMAJ(CubePath):
     return max(BMAJ/pix_size)
 
 def NegativeRate(SNR,N,sigma):
-	return N*np.exp(-1.0*np.power(SNR,2)/(2.0*np.power(sigma,2)))
+	# return N*np.exp(-1.0*np.power(SNR,2)/(2.0*np.power(sigma,2)))
+	return N*0.5 *( 1.0 -  scipy.special.erf(SNR/(np.sqrt(2.0)*sigma)))  #1 - CDF(SNR) assuming Gaussian distribution and N independent elements.
+
+def NegativeRateLog(SNR,N,sigma):
+	# return N*np.exp(-1.0*np.power(SNR,2)/(2.0*np.power(sigma,2)))
+	return np.log10(N*0.5 *( 1.0 -  scipy.special.erf(SNR/(np.sqrt(2.0)*sigma))))  #1 - CDF(SNR) assuming Gaussian distribution and N independent elements.
 
 def GetFinalSN(SourcesTotal,PixelsPerBMAJ):
 	COORD = []
@@ -299,13 +304,13 @@ def GetArraysFromFile(path,Sources,minSN):
 				continue
 			if FirstCharacter == '-' or j[0]== 'max_negative_sn:':
 				continue
-			SN = float(j[3].replace('SN:',''))
+			SN = np.float(j[3].replace('SN:',''))
 
 			if SN>=minSN :
 				spw = int(j[0])
-				x = float(j[1])
-				y = float(j[2])
-				sn = float(j[-1].replace('SN:',''))
+				x = np.float(j[1])
+				y = np.float(j[2])
+				sn = np.float(j[-1].replace('SN:',''))
 				COORD.append(np.array([x,y,spw]))
 				X.append(x)
 				Y.append(y)
@@ -661,7 +666,14 @@ def GetPoissonEstimates(bins,SNFinalPos,SNFinalNeg,LimitN,MinSN):
 
 	if UsableBins>=3:
 		try:
-			popt, pcov = curve_fit(NegativeRate, bins[bins>=MinSNtoFit][Nnegative[bins>=MinSNtoFit]>LimitN], Nnegative[bins>=MinSNtoFit][Nnegative[bins>=MinSNtoFit]>LimitN],p0=[1e6,1])
+			# popt, pcov = curve_fit(NegativeRate, bins[bins>=MinSNtoFit][Nnegative[bins>=MinSNtoFit]>LimitN], Nnegative[bins>=MinSNtoFit][Nnegative[bins>=MinSNtoFit]>LimitN],p0=[1e6,1])
+			popt, pcov = curve_fit(NegativeRateLog, 
+					bins[bins>=MinSNtoFit][Nnegative[bins>=MinSNtoFit]>LimitN],
+					np.log10(Nnegative[bins>=MinSNtoFit][Nnegative[bins>=MinSNtoFit]>LimitN]),
+					p0=[1e6,1],
+					sigma=np.log10(np.average([Nnegative_e1[bins>=MinSNtoFit][Nnegative[bins>=MinSNtoFit]>LimitN],Nnegative_e2[bins>=MinSNtoFit][Nnegative[bins>=MinSNtoFit]>LimitN]],axis=0)),
+					absolute_sigma=False)
+
 			perr = np.sqrt(np.diag(pcov))
 			# print popt,popt/perr,not np.isfinite(perr[0])
 			CounterFitTries = 0
@@ -670,17 +682,29 @@ def GetPoissonEstimates(bins,SNFinalPos,SNFinalNeg,LimitN,MinSN):
 				NewParameter1 = np.power(10,np.random.uniform(1,9))
 				NewParameter2 = np.random.uniform(0.1,2.0)
 				print '*** New Initial Estimates for the fitting (random):',round(NewParameter1),round(NewParameter2,2),' ***'
-				popt, pcov = curve_fit(NegativeRate, bins[bins>=MinSNtoFit][Nnegative[bins>=MinSNtoFit]>LimitN], Nnegative[bins>=MinSNtoFit][Nnegative[bins>=MinSNtoFit]>LimitN],p0=[NewParameter1,NewParameter2])
+				# popt, pcov = curve_fit(NegativeRate, bins[bins>=MinSNtoFit][Nnegative[bins>=MinSNtoFit]>LimitN], Nnegative[bins>=MinSNtoFit][Nnegative[bins>=MinSNtoFit]>LimitN],p0=[NewParameter1,NewParameter2])
+				popt, pcov = curve_fit(NegativeRateLog, 
+										bins[bins>=MinSNtoFit][Nnegative[bins>=MinSNtoFit]>LimitN],
+										np.log10(Nnegative[bins>=MinSNtoFit][Nnegative[bins>=MinSNtoFit]>LimitN]),
+										p0=[NewParameter1,NewParameter2],
+										sigma=np.log10(np.average([Nnegative_e1[bins>=MinSNtoFit][Nnegative[bins>=MinSNtoFit]>LimitN],Nnegative_e2[bins>=MinSNtoFit][Nnegative[bins>=MinSNtoFit]>LimitN]],axis=0)),
+										absolute_sigma=False)
 				perr = np.sqrt(np.diag(pcov))
 				print '*** New Results: N:',round(popt[0]),' +/- ',round(perr[0]),' Sigma:',round(popt[1],2),' +/- ',round(perr[1],2),' ***'
 				CounterFitTries += 1
 				if CounterFitTries >100:
-					print '*** Over 100 attemps and not good fit *** '
+					print '*** Over 100 attemps and no good fit *** '
 					break
 
 		except:
 			print 'Fitting failed for LimitN:'+str(LimitN)+' and '+str(MinSN)+'... Will force LimitN=0'
-			popt, pcov = curve_fit(NegativeRate, bins[Nnegative>0], Nnegative[Nnegative>0],p0=[1e6,1])	
+			# popt, pcov = curve_fit(NegativeRate, bins[Nnegative>0], Nnegative[Nnegative>0],p0=[1e6,1])	
+			popt, pcov = curve_fit(NegativeRateLog, 
+					bins[Nnegative>0],
+					np.log10(Nnegative[Nnegative>0]),
+					p0=[1e6,1],
+					sigma=np.log10(np.average([Nnegative_e1[Nnegative>0],Nnegative_e2[Nnegative>0]],axis=0)),
+					absolute_sigma=False)
 			perr = np.sqrt(np.diag(pcov))
 			# print popt,popt/perr,not np.isfinite(perr[0])
 			CounterFitTries = 0
@@ -689,16 +713,28 @@ def GetPoissonEstimates(bins,SNFinalPos,SNFinalNeg,LimitN,MinSN):
 				NewParameter1 = np.power(10,np.random.uniform(1,9))
 				NewParameter2 = np.random.uniform(0.1,2.0)
 				print '*** New Initial Estimates for the fitting (random):',round(NewParameter1),round(NewParameter2,2),' ***'
-				popt, pcov = curve_fit(NegativeRate, bins[Nnegative>0], Nnegative[Nnegative>0],p0=[NewParameter1,NewParameter2])
+				# popt, pcov = curve_fit(NegativeRate, bins[Nnegative>0], Nnegative[Nnegative>0],p0=[NewParameter1,NewParameter2])
+				popt, pcov = curve_fit(NegativeRateLog, 
+										bins[Nnegative>0],
+										np.log10(Nnegative[Nnegative>0]),
+										p0=[NewParameter1,NewParameter2],
+										sigma=np.log10(np.average([Nnegative_e1[Nnegative>0],Nnegative_e2[Nnegative>0]],axis=0)),
+										absolute_sigma=False)
 				perr = np.sqrt(np.diag(pcov))
 				print '*** New Results: N:',round(popt[0]),' +/- ',round(perr[0]),' Sigma:',round(popt[1],2),' +/- ',round(perr[1],2),' ***'
 				CounterFitTries += 1
 				if CounterFitTries >100:
-					print '*** Over 100 attemps and not good fit *** '
+					print '*** Over 100 attemps and no good fit *** '
 					break
 	else:
 		print 'Number of usable bins is less than 3 for LimitN:'+str(LimitN)+' and '+str(MinSN)+'... Will force LimitN=0'
-		popt, pcov = curve_fit(NegativeRate, bins[Nnegative>0], Nnegative[Nnegative>0],p0=[1e6,1])	
+		# popt, pcov = curve_fit(NegativeRate, bins[Nnegative>0], Nnegative[Nnegative>0],p0=[1e6,1])	
+		popt, pcov = curve_fit(NegativeRateLog, 
+					bins[Nnegative>0],
+					np.log10(Nnegative[Nnegative>0]),
+					p0=[1e6,1],
+					sigma=np.log10(np.average([Nnegative_e1[Nnegative>0],Nnegative_e2[Nnegative>0]],axis=0)),
+					absolute_sigma=False)
 		perr = np.sqrt(np.diag(pcov))
 		# print popt,popt/perr,not np.isfinite(perr[0])
 		CounterFitTries = 0
@@ -707,16 +743,30 @@ def GetPoissonEstimates(bins,SNFinalPos,SNFinalNeg,LimitN,MinSN):
 			NewParameter1 = np.power(10,np.random.uniform(1,9))
 			NewParameter2 = np.random.uniform(0.1,2.0)
 			print '*** New Initial Estimates for the fitting (random):',round(NewParameter1),round(NewParameter2,2),' ***'
-			popt, pcov = curve_fit(NegativeRate, bins[Nnegative>0], Nnegative[Nnegative>0],p0=[NewParameter1,NewParameter2])
+			# popt, pcov = curve_fit(NegativeRate, bins[Nnegative>0], Nnegative[Nnegative>0],p0=[NewParameter1,NewParameter2])
+			popt, pcov = curve_fit(NegativeRateLog, 
+										bins[Nnegative>0],
+										np.log10(Nnegative[Nnegative>0]),
+										p0=[NewParameter1,NewParameter2],
+										sigma=np.log10(np.average([Nnegative_e1[Nnegative>0],Nnegative_e2[Nnegative>0]],axis=0)),
+										absolute_sigma=False)
 			perr = np.sqrt(np.diag(pcov))
 			print '*** New Results: N:',round(popt[0]),' +/- ',round(perr[0]),' Sigma:',round(popt[1],2),' +/- ',round(perr[1],2),' ***'
 			CounterFitTries += 1
 			if CounterFitTries >100:
-				print '*** Over 100 attemps and not good fit *** '
+				print '*** Over 100 attemps and no good fit *** '
 				break
 
 	NegativeFitted = NegativeRate(bins,popt[0],popt[1])
 	SNPeakGaussian = (popt/np.sqrt(np.diag(pcov)))[0]
+	# print 'SNPeakGaussian',SNPeakGaussian,popt,np.sqrt(np.diag(pcov))
+	# print curve_fit(NegativeRate, bins[bins>=MinSNtoFit][Nnegative[bins>=MinSNtoFit]>LimitN], Nnegative[bins>=MinSNtoFit][Nnegative[bins>=MinSNtoFit]>LimitN],p0=[1e6,1],sigma=np.average([Nnegative_e1[bins>=MinSNtoFit][Nnegative[bins>=MinSNtoFit]>LimitN],Nnegative_e2[bins>=MinSNtoFit][Nnegative[bins>=MinSNtoFit]>LimitN]],axis=0),absolute_sigma=False)
+	# print curve_fit(NegativeRateLog, 
+	# 				bins[bins>=MinSNtoFit][Nnegative[bins>=MinSNtoFit]>LimitN],
+	# 				np.log10(Nnegative[bins>=MinSNtoFit][Nnegative[bins>=MinSNtoFit]>LimitN]),
+	# 				p0=[1e6,1],
+	# 				sigma=np.log10(np.average([Nnegative_e1[bins>=MinSNtoFit][Nnegative[bins>=MinSNtoFit]>LimitN],Nnegative_e2[bins>=MinSNtoFit][Nnegative[bins>=MinSNtoFit]>LimitN]],axis=0)),
+	# 				absolute_sigma=False)
 
 	for i in range(len(bins)):
 		aux = []
@@ -732,13 +782,16 @@ def GetPoissonEstimates(bins,SNFinalPos,SNFinalNeg,LimitN,MinSN):
 				else:
 					auxExpected.append(0.0)
 			else:
-				lamb2 = lamb - np.random.normal(NegativeFitted[i+1],NegativeFitted[i+1]/SNPeakGaussian) 
+				# lamb2 = lamb - np.random.normal(NegativeFitted[i+1],NegativeFitted[i+1]/SNPeakGaussian) 
+				lamb2 = (NegativeFitted[i] - NegativeFitted[i+1])*lamb/NegativeFitted[i]
 				while lamb2<0:
 					lamb2 = lamb - np.random.normal(NegativeFitted[i+1],NegativeFitted[i+1]/SNPeakGaussian) 
 				if (NPositive[i] - NPositive[i+1])>0:
 					auxExpected.append(1.0-max(0,(NPositive[i] - NPositive[i+1]) - lamb2)/(NPositive[i] - NPositive[i+1]))
 				else:
 					auxExpected.append(0.0)
+					# auxExpected.append(1.0-max(0,0.7 - lamb2)/0.7)
+
 
 		PP = np.nanpercentile(aux,[16,50,84])
 		PPExpected = np.nanpercentile(auxExpected,[16,50,84])
@@ -749,6 +802,8 @@ def GetPoissonEstimates(bins,SNFinalPos,SNFinalNeg,LimitN,MinSN):
 		ProbPoissonExpected.append(PPExpected[1])
 		ProbPoissonExpectedE1.append(PPExpected[1]-PPExpected[0])
 		ProbPoissonExpectedE2.append(PPExpected[2]-PPExpected[1])		
+		# if i<len(bins)-1:
+		# 	print bins[i],PPExpected,NegativeFitted[i],NPositive[i],NPositive[i+1]
 		if NPositive[i]>0:
 			PurityPoisson.append(max((NPositive[i]-NegativeFitted[i])/NPositive[i],0))
 		else:

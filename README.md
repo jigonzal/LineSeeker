@@ -57,7 +57,6 @@ The output in the terminal for GetLineCandidates.py is very important, some warn
 
 What is important is this:
 
---------------------------------------------------
 for sigma 1
 S/N NDetected Fraction Nsimulations ExpectedNumberPerCube Error
 Min SN to do the fit: 2.9 , Number of usable bins: 14
@@ -69,7 +68,6 @@ Min SN to do the fit: 3.4 , Number of usable bins: 9
 Min SN to do the fit: 3.5 , Number of usable bins: 8
 Min SN to do the fit: 3.6 , Number of usable bins: 7
 Min SN to do the fit: 3.7 , Number of usable bins: 6
---------------------------------------------------
 
 This will appear for each of the convolutions used in the search, 31 in this case. Here I'm showing the one for n=1. The code will try to use a SN cut so that it has at least six bins with more than 20 (default number) negative line candidates. I do this to have a good reference for the negative data without suffering from incomplete sampling of low SN negative lines. 
 

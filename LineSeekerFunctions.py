@@ -1,3 +1,4 @@
+from __future__ import print_function
 import os
 import numpy as np
 import astropy.io.fits as fits
@@ -47,23 +48,26 @@ def GetMinSNEstimate(CubePath):
     ApproxMaxSigmas = 1000.0/ApproxChannelVelocityWidth
     aux = len(data[0][np.isfinite(data[0])].flatten())*1.0/factor[0]*(len(data)/ApproxMaxSigmas)
     Number2Print = round(np.power(10,np.log10(aux)*0.07723905 + 0.19291493),1)
-    print '*** A rough guesstimate to use as MinSN is',Number2Print,'***'
+    print('*** A rough guesstimate to use as MinSN is',Number2Print,'***')
     # print len(data[0][np.isfinite(data[0])].flatten())*1.0/factor[0]*(len(data)/ApproxMaxSigmas)
     return 
 
 def SearchLine(CubePath,FolderForLinesFiles,MinSN,sigmas,UseMask,ContinuumImage,MaskSN,Kernel):
 
     '''
-    Function that search for emission lines.
+    Function that searchs for emission lines.
     '''
     SN = np.array([])
     SNneg = np.array([])
 
-    print 100*'#'
-    print 'Starting search of lines with parameter for filter equal to',sigmas,'channels'
+    print(100*'#')
+    print('Starting search of lines with parameter for filter equal to',sigmas,'channels')
 
     hdulist = fits.open(CubePath,memmap=True)
-    data  = hdulist[0].data[0]  
+    if len(np.shape(hdulist[0].data))==4:
+    	data  = hdulist[0].data[0]
+    else:
+    	data  = hdulist[0].data
     hdulist = 0
 
     #Nop optimal, but it reads the continuum image every cycle.
@@ -75,9 +79,8 @@ def SearchLine(CubePath,FolderForLinesFiles,MinSN,sigmas,UseMask,ContinuumImage,
 
 
     if Kernel=='Gaussian' or Kernel=='guassian':
-        data = scipy.ndimage.filters.gaussian_filter(data, [sigmas,0,0],mode='constant',
-        																cval=0.0, 
-        																truncate=4.0)
+        print(np.shape(data))
+        data = scipy.ndimage.filters.gaussian_filter(data, sigma=[sigmas,0,0],mode='constant',cval=0.0,truncate=4.0)
     else:
         ZeroChannel = []
         NanChannel = []
@@ -110,7 +113,7 @@ def SearchLine(CubePath,FolderForLinesFiles,MinSN,sigmas,UseMask,ContinuumImage,
     pix1,pix2,pix3 = np.where(data>=MinSN)
     t = Table([pix1, pix3, pix2,data[pix1,pix2,pix3]], names=('Channel', 'Xpix', 'Ypix','SN'))
     t.write(FolderForLinesFiles+'/line_dandidates_sn_sigmas'+str(sigmas)+'_pos.fits', format='fits',overwrite=True)
-    print 'Positive pixels in search for Sigmas:',sigmas,'N:',len(pix2)
+    print('Positive pixels in search for Sigmas:',sigmas,'N:',len(pix2))
 
 
     data = -1.0*data
@@ -118,11 +121,11 @@ def SearchLine(CubePath,FolderForLinesFiles,MinSN,sigmas,UseMask,ContinuumImage,
     t = Table([pix1, pix3, pix2,data[pix1,pix2,pix3]], names=('Channel', 'Xpix', 'Ypix','SN'))
     t.write(FolderForLinesFiles+'/line_dandidates_sn_sigmas'+str(sigmas)+'_neg.fits', format='fits',overwrite=True)
     data = 0
-    print 'Negative pixels in search for Sigmas:',sigmas,'N:',len(pix2)
+    print('Negative pixels in search for Sigmas:',sigmas,'N:',len(pix2))
 
 def SimulateCube(CubePath):
-    print 100*'#'
-    print 'Creating Simulated Cube...'
+    print(100*'#')
+    print('Creating Simulated Cube...')
     hdulist =   fits.open(CubePath,memmap=True)
     head = hdulist[0].header
     data = hdulist[0].data[0]
@@ -147,7 +150,7 @@ def SimulateCube(CubePath):
     factor = 2*(np.pi*BMAJ*BMIN/(8.0*np.log(2)))/(pix_size**2)
     factor = 1.0/factor
     FractionBeam = 1.0/np.sqrt(2.0)
-    print 'Fraction Beam',FractionBeam
+    print('Fraction Beam',FractionBeam)
     KernelList = []
 
     for i in range(len(BMAJ)):
@@ -172,8 +175,8 @@ def SimulateCube(CubePath):
         FinalRMS = np.nanstd(data[i][data[i]<5.0*InitialRMS])
         RMS.append(FinalRMS)
     RMS = np.array(RMS)
-    print 'Average RMS per channel:',np.mean(RMS[np.isfinite(RMS)]),'Jy/beam'
-    print 'Median RMS per channel:',np.median(RMS[np.isfinite(RMS)]),'Jy/beam'
+    print('Average RMS per channel:',np.mean(RMS[np.isfinite(RMS)]),'Jy/beam')
+    print('Median RMS per channel:',np.median(RMS[np.isfinite(RMS)]),'Jy/beam')
     RandomNoiseCube = np.random.normal(size=np.shape(data)) 
 
     for i in range(len(RandomNoiseCube)):
@@ -651,18 +654,22 @@ def GetPoissonEstimates(bins,SNFinalPos,SNFinalNeg,LimitN,MinSN):
 	MinSNtoFit = min(bins)
 	UsableBins = len(Nnegative[bins>=MinSNtoFit][Nnegative[bins>=MinSNtoFit]>LimitN])
 
-	print 'Min SN to do the fit:',round(MinSNtoFit,1),', Number of usable bins:',UsableBins
+	AuxiliarOutput = open('SN_UsedInFit.dat','w')
+	print('Min SN to do the fit:',round(MinSNtoFit,1),', Number of usable bins:',UsableBins)
+	AuxiliarOutput.write(str(round(MinSNtoFit,1))+' ' + str(UsableBins)+'\n')
 	if UsableBins<6:
-		print '*** We are using ',UsableBins,' points for the fitting of the negative counts ***'
-		print '*** We usually get good results with 6 points, try reducing the parameter -MinSN ***'
+		print('*** We are using ',UsableBins,' points for the fitting of the negative counts ***')
+		print('*** We usually get good results with 6 points, try reducing the parameter -MinSN ***')
 	while UsableBins>6:
 		MinSNtoFit = MinSNtoFit + 0.1
 		UsableBins = len(Nnegative[bins>=MinSNtoFit][Nnegative[bins>=MinSNtoFit]>LimitN])
-		print 'Min SN to do the fit:',round(MinSNtoFit,1),', Number of usable bins:',UsableBins
-		if MinSNtoFit>max(bins):
-			print 'No negative points to do the fit'
-			exit()
+		print('Min SN to do the fit:',round(MinSNtoFit,1),', Number of usable bins:',UsableBins)
+		AuxiliarOutput.write(str(round(MinSNtoFit,1))+' ' + str(UsableBins)+'\n')
 
+		if MinSNtoFit>max(bins):
+			print('No negative points to do the fit')
+			exit()
+	AuxiliarOutput.close()
 
 	if UsableBins>=3:
 		try:
@@ -678,10 +685,10 @@ def GetPoissonEstimates(bins,SNFinalPos,SNFinalNeg,LimitN,MinSN):
 			# print popt,popt/perr,not np.isfinite(perr[0])
 			CounterFitTries = 0
 			while not np.isfinite(perr[0]):
-				print '*** curve_fit failed to converge ... ***'
+				print('*** curve_fit failed to converge ... ***')
 				NewParameter1 = np.power(10,np.random.uniform(1,9))
 				NewParameter2 = np.random.uniform(0.1,2.0)
-				print '*** New Initial Estimates for the fitting (random):',round(NewParameter1),round(NewParameter2,2),' ***'
+				print('*** New Initial Estimates for the fitting (random):',round(NewParameter1),round(NewParameter2,2),' ***')
 				# popt, pcov = curve_fit(NegativeRate, bins[bins>=MinSNtoFit][Nnegative[bins>=MinSNtoFit]>LimitN], Nnegative[bins>=MinSNtoFit][Nnegative[bins>=MinSNtoFit]>LimitN],p0=[NewParameter1,NewParameter2])
 				popt, pcov = curve_fit(NegativeRateLog, 
 										bins[bins>=MinSNtoFit][Nnegative[bins>=MinSNtoFit]>LimitN],
@@ -690,14 +697,14 @@ def GetPoissonEstimates(bins,SNFinalPos,SNFinalNeg,LimitN,MinSN):
 										sigma=np.log10(np.average([Nnegative_e1[bins>=MinSNtoFit][Nnegative[bins>=MinSNtoFit]>LimitN],Nnegative_e2[bins>=MinSNtoFit][Nnegative[bins>=MinSNtoFit]>LimitN]],axis=0)),
 										absolute_sigma=False)
 				perr = np.sqrt(np.diag(pcov))
-				print '*** New Results: N:',round(popt[0]),' +/- ',round(perr[0]),' Sigma:',round(popt[1],2),' +/- ',round(perr[1],2),' ***'
+				print('*** New Results: N:',round(popt[0]),' +/- ',round(perr[0]),' Sigma:',round(popt[1],2),' +/- ',round(perr[1],2),' ***')
 				CounterFitTries += 1
 				if CounterFitTries >100:
-					print '*** Over 100 attemps and no good fit *** '
+					print('*** Over 100 attemps and no good fit *** ')
 					break
 
 		except:
-			print 'Fitting failed for LimitN:'+str(LimitN)+' and '+str(MinSN)+'... Will force LimitN=0'
+			print('Fitting failed for LimitN:'+str(LimitN)+' and '+str(MinSN)+'... Will force LimitN=0')
 			# popt, pcov = curve_fit(NegativeRate, bins[Nnegative>0], Nnegative[Nnegative>0],p0=[1e6,1])	
 			popt, pcov = curve_fit(NegativeRateLog, 
 					bins[Nnegative>0],
@@ -709,10 +716,10 @@ def GetPoissonEstimates(bins,SNFinalPos,SNFinalNeg,LimitN,MinSN):
 			# print popt,popt/perr,not np.isfinite(perr[0])
 			CounterFitTries = 0
 			while not np.isfinite(perr[0]):
-				print '*** curve_fit failed to converge ... ***'
+				print('*** curve_fit failed to converge ... ***')
 				NewParameter1 = np.power(10,np.random.uniform(1,9))
 				NewParameter2 = np.random.uniform(0.1,2.0)
-				print '*** New Initial Estimates for the fitting (random):',round(NewParameter1),round(NewParameter2,2),' ***'
+				print('*** New Initial Estimates for the fitting (random):',round(NewParameter1),round(NewParameter2,2),' ***')
 				# popt, pcov = curve_fit(NegativeRate, bins[Nnegative>0], Nnegative[Nnegative>0],p0=[NewParameter1,NewParameter2])
 				popt, pcov = curve_fit(NegativeRateLog, 
 										bins[Nnegative>0],
@@ -721,13 +728,13 @@ def GetPoissonEstimates(bins,SNFinalPos,SNFinalNeg,LimitN,MinSN):
 										sigma=np.log10(np.average([Nnegative_e1[Nnegative>0],Nnegative_e2[Nnegative>0]],axis=0)),
 										absolute_sigma=False)
 				perr = np.sqrt(np.diag(pcov))
-				print '*** New Results: N:',round(popt[0]),' +/- ',round(perr[0]),' Sigma:',round(popt[1],2),' +/- ',round(perr[1],2),' ***'
+				print('*** New Results: N:',round(popt[0]),' +/- ',round(perr[0]),' Sigma:',round(popt[1],2),' +/- ',round(perr[1],2),' ***')
 				CounterFitTries += 1
 				if CounterFitTries >100:
-					print '*** Over 100 attemps and no good fit *** '
+					print('*** Over 100 attemps and no good fit *** ')
 					break
 	else:
-		print 'Number of usable bins is less than 3 for LimitN:'+str(LimitN)+' and '+str(MinSN)+'... Will force LimitN=0'
+		print('Number of usable bins is less than 3 for LimitN:'+str(LimitN)+' and '+str(MinSN)+'... Will force LimitN=0')
 		# popt, pcov = curve_fit(NegativeRate, bins[Nnegative>0], Nnegative[Nnegative>0],p0=[1e6,1])	
 		popt, pcov = curve_fit(NegativeRateLog, 
 					bins[Nnegative>0],
@@ -739,10 +746,10 @@ def GetPoissonEstimates(bins,SNFinalPos,SNFinalNeg,LimitN,MinSN):
 		# print popt,popt/perr,not np.isfinite(perr[0])
 		CounterFitTries = 0
 		while not np.isfinite(perr[0]):
-			print '*** curve_fit failed to converge ... ***'
+			print('*** curve_fit failed to converge ... ***')
 			NewParameter1 = np.power(10,np.random.uniform(1,9))
 			NewParameter2 = np.random.uniform(0.1,2.0)
-			print '*** New Initial Estimates for the fitting (random):',round(NewParameter1),round(NewParameter2,2),' ***'
+			print('*** New Initial Estimates for the fitting (random):',round(NewParameter1),round(NewParameter2,2),' ***')
 			# popt, pcov = curve_fit(NegativeRate, bins[Nnegative>0], Nnegative[Nnegative>0],p0=[NewParameter1,NewParameter2])
 			popt, pcov = curve_fit(NegativeRateLog, 
 										bins[Nnegative>0],
@@ -751,10 +758,10 @@ def GetPoissonEstimates(bins,SNFinalPos,SNFinalNeg,LimitN,MinSN):
 										sigma=np.log10(np.average([Nnegative_e1[Nnegative>0],Nnegative_e2[Nnegative>0]],axis=0)),
 										absolute_sigma=False)
 			perr = np.sqrt(np.diag(pcov))
-			print '*** New Results: N:',round(popt[0]),' +/- ',round(perr[0]),' Sigma:',round(popt[1],2),' +/- ',round(perr[1],2),' ***'
+			print('*** New Results: N:',round(popt[0]),' +/- ',round(perr[0]),' Sigma:',round(popt[1],2),' +/- ',round(perr[1],2),' ***')
 			CounterFitTries += 1
 			if CounterFitTries >100:
-				print '*** Over 100 attemps and no good fit *** '
+				print('*** Over 100 attemps and no good fit *** ')
 				break
 
 	NegativeFitted = NegativeRate(bins,popt[0],popt[1])

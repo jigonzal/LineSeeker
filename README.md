@@ -23,7 +23,7 @@ To keep in mind:
 - When the cube is well behaved and symmetrical with respect to zero (difficult to say by eye) is ok to use only the negative data as reference. If you have doubts about some of the candidates, then also run the simulations and get the probabilitites again. When using simulations we are assuming that the noise is Gaussian.
 
 
-Example using BRI1202:
+Example using BRI1202 (get cube from https://almascience.nrao.edu/almadata/sciver/BR1202Band7/BR1202_Band7_ReferenceImages.tgz):
 
 - First run "python SearchLine.py -h" to get the options. 
 

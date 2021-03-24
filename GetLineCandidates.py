@@ -1,9 +1,10 @@
 #Change matplotlib backend to use Agg so it can run without a X server in a linux machine with Centos <7.
+from __future__ import print_function
 try:
 	import matplotlib as mpl
 	mpl.use('Agg')
 except:
-	print 'Problem using Agg backend'
+	print('Problem using Agg backend')
 # import warnings
 # warnings.filterwarnings("ignore")
 
@@ -24,7 +25,7 @@ try:
 	sns.set_palette('Dark2', 8,desat=1)
 	cc = sns.color_palette()
 except:
-	print 'No seaborn package installed'
+	print('No seaborn package installed')
 	cc = ['red','blue','green','orange','magenta','black']
 import argparse
 import astropy.io.fits as fits
@@ -39,7 +40,7 @@ import os.path
 
 USAGE: "python GetLineCandidates.py -h" will give a description of the input values
 
-python GetLineCandidates.py -Cube cube.fits -MaxSigmas 10 -MinSN 3.5 -LineSearchPath LineSearchTEST1 -SimulationPath Simulation1 -SurveyName Survey -Wavelength 3
+python GetLineCandidates.py -Cube cube.fits -MaxSigmas 10 -MinSN 3.5 -LineSearchPath LineSearchTEST1 -SimulationPath Simulation1 -SurveyName Survey 
 
 Changelog:
 ---------------------------------------------------------------------------------------------
@@ -107,6 +108,21 @@ I moved the functions to the new file LineSeekerFunctions.
 New fidelity estimates that give the probability of any line of being more than noise. 
 
 ---------------------------------------------------------------------------------------------
+v2.0
+
+Todo:
+I have changed added an alternative for the LEE correction. Now the default is final p = 1 - (1-p)**MaxSigmas (https://ui.adsabs.harvard.edu/abs/2015APh....62..165C/abstract)
+There is a new option ot used the default one from previous versions. 
+
+
+Eliminated non used estimated to avoid confussion. 
+
+Eliminated global estimates. 
+
+Changed the naming scheme for the candidates. 
+
+Added the creation of a file with the parameters used. I addded this so I could try to automatize the search. 
+---------------------------------------------------------------------------------------------
 '''
 
 
@@ -117,42 +133,41 @@ parser.add_argument('-SimulationPath', type=str, default='Simulation', required=
 parser.add_argument('-MaxSigmas', type=int, default = 10, required=False,help = 'Maximum number of channels to use as sigma value for the spectral Gaussian convolution. [Default:10]')
 parser.add_argument('-MinSN', type=float, default = 5.0, required=False,help = 'Minimum S/N value to save in the outputs. A good value depends on each data cube, reasonable values are bettween 3.5 and 6 [Default:5.0]')
 parser.add_argument('-SurveyName', type=str, default='Survey', required=False , help = 'Name to identify the line candidates [Default:Survey]')
-parser.add_argument('-Wavelength', type=str, default='X', required=False , help = 'Wavelength for reference in the names [Default:X]')
 parser.add_argument('-LimitN', type=float, default='20.0', required=False , help = 'Limit for the number of detection above certain S/N to be used in the fitting of the negative counts [Default:20]')
 parser.add_argument('-LegendFontSize', type=float, default='10.0', required=False , help = 'Fontsize fot the figures legends [Default:10]')
 parser.add_argument('-UserEPS', type=str, default='False',choices=['True','False'], required=False , help = 'Whether to use EPS value entered from user otherwise use number of pixels per bmaj [Default:False]')
 parser.add_argument('-EPS', type=float, default=5.0, required=False , help = 'EPS value to use if User sets -UserEPS to True [Default:5.0]')
-parser.add_argument('-GetTotalEstimate', type=str, default='False',choices=['True','False'], required=False , help = 'Whether to get total distribution including all lines of different widths [Default:True]')
+parser.add_argument('-UseFactorLEE', type=str, default='False',choices=['True','False'], required=False , help = 'Whether to correct by the Look-Elsewhere effect using only a factor (1 + (ln(MaxSigmas -1) + 1/(2*(MaxSigmas -1))) + 0.577) [Default:False]')
 
 args = parser.parse_args()
 
-print 20*'#','Checking inputs....',20*'#'
+print(20*'#','Checking inputs....',20*'#')
 if os.path.exists(args.Cube):
-    print '*** Cube',args.Cube,'found ***'
+    print('*** Cube',args.Cube,'found ***')
 else:
-    print '*** Cube',args.Cube,'not found ***\naborting..'
+    print('*** Cube',args.Cube,'not found ***\naborting..')
     exit()
 
 if args.MaxSigmas<1:
-    print '*** The value for MaxSigmas of',args.MaxSigmas,'is too small ***\naborting..'
+    print('*** The value for MaxSigmas of',args.MaxSigmas,'is too small ***\naborting..')
     exit()
 else:
-    print '*** The value for MaxSigmas of',args.MaxSigmas,'is ok ***'
+    print('*** The value for MaxSigmas of',args.MaxSigmas,'is ok ***')
 
 if args.MinSN<0:
-    print '*** The value for MinSN of',args.MinSN,'has to be positive ***\naborting..'
+    print('*** The value for MinSN of',args.MinSN,'has to be positive ***\naborting..')
     exit()
 else:
-    print '*** The value for MinSN of',args.MinSN,'is ok ***'
+    print('*** The value for MinSN of',args.MinSN,'is ok ***')
 
 if args.UserEPS=='False':
 	PixelsPerBMAJ = LineSeekerFunctions.GetPixelsPerBMAJ(args.Cube)
 	if args.MaxSigmas == 1:
 		PixelsPerBMAJ = 1.0
-	print '*** Using EPS value of '+str(PixelsPerBMAJ)+'***'
+	print('*** Using EPS value of '+str(PixelsPerBMAJ)+'***')
 else:
 	PixelsPerBMAJ = args.EPS
-	print '*** Using EPS value of '+str(PixelsPerBMAJ)+'***'
+	print('*** Using EPS value of '+str(PixelsPerBMAJ)+'***')
 
 
 bins = np.arange(args.MinSN,8.1,0.1)
@@ -171,7 +186,7 @@ fig1.subplots_adjust(left=0.15, bottom=0.13, right=0.94, top=0.96,wspace=0.10, h
 ax1 = fig1.add_subplot(111)
 
 for i in range(args.MaxSigmas):
-	print 50*'-'
+	print(50*'-')
 	Sources_real = np.array(LineSeekerFunctions.GetSourcesFromFiles([args.LineSearchPath+'/line_dandidates_sn_sigmas'+str(i)+'_pos'],args.MinSN,PixelsPerBMAJ))
 	Sources_realNeg = np.array(LineSeekerFunctions.GetSourcesFromFiles([args.LineSearchPath+'/line_dandidates_sn_sigmas'+str(i)+'_neg'],args.MinSN,PixelsPerBMAJ))
 
@@ -198,7 +213,7 @@ for i in range(args.MaxSigmas):
 			aux_sn = np.array(aux_sn)
 			SimulatedSources.append(aux_sn)
 		except:
-			print 'file not working',folder+'/line_dandidates_sn_sigmas'+str(i)+'_pos'
+			print('file not working',folder+'/line_dandidates_sn_sigmas'+str(i)+'_pos')
 
 	SNReal = []
 	for source in Sources_real:
@@ -213,11 +228,11 @@ for i in range(args.MaxSigmas):
 	SimulatedSources = np.array(SimulatedSources)
 
 	
-	print 'for sigma',i
+	print('for sigma',i)
 	y = []
 	yExpected = []
 	yExpectedSigma = []
-	print 'S/N NDetected Fraction Nsimulations ExpectedNumberPerCube Error'
+	print('S/N NDetected Fraction Nsimulations ExpectedNumberPerCube Error')
 	if len(SimulatedSources)>1:
 		for sn in bins:
 			# print round(sn,1),len(SNReal[SNReal>=sn])*1.0,
@@ -230,12 +245,12 @@ for i in range(args.MaxSigmas):
 				if len(sim[sim>=sn])>0:
 					N_detections += 1.0
 
-			print round(sn,1),
-			print len(SNReal[SNReal>=sn]),
-			print round(N_detections/N_simulations2,2),
-			print N_simulations2,
-			print round(np.mean(NumberDetectedPerCube),3),
-			print round(np.std(NumberDetectedPerCube)/np.sqrt(1.0*len(NumberDetectedPerCube)),3)
+			print(round(sn,1),)
+			print(len(SNReal[SNReal>=sn]),)
+			print(round(N_detections/N_simulations2,2),)
+			print(N_simulations2,)
+			print(round(np.mean(NumberDetectedPerCube),3),)
+			print(round(np.std(NumberDetectedPerCube)/np.sqrt(1.0*len(NumberDetectedPerCube)),3))
 
 			y.append(N_detections/N_simulations2)
 			yExpected.append(np.mean(NumberDetectedPerCube))
@@ -435,197 +450,58 @@ for i in range(args.MaxSigmas):
 SNFinalPos = LineSeekerFunctions.GetFinalSN(SourcesTotalPos,PixelsPerBMAJ)
 SNFinalNeg = LineSeekerFunctions.GetFinalSN(SourcesTotalNeg,PixelsPerBMAJ)
 
-if args.GetTotalEstimate == 'True':
-	print '*** Creating output from total estimates... ***'
-	##### For Total #####
-	print 'Reading Simulations for Total estimate...'
 
-	simulations_folders = glob.glob(args.SimulationPath+'/simul_*')
-	SimulatedSourcesTotal = []
-	counter = 1
-	
-	for folder in simulations_folders:
-		print folder,counter,'/',len(simulations_folders)
-		try:
-			aux = LineSeekerFunctions.GetSourcesFromFiles(glob.glob(folder+'/*_pos.*'),args.MinSN,PixelsPerBMAJ)
-
-			aux_sn = []
-			for source in aux:
-				aux_sn.append(max(source[3]))
-			aux_sn = np.array(aux_sn)
-			SimulatedSourcesTotal.append(aux_sn)
-
-			aux = LineSeekerFunctions.GetSourcesFromFiles(glob.glob(folder+'/*_neg.*'),args.MinSN,PixelsPerBMAJ)
-
-			aux_sn = []
-			for source in aux:
-				aux_sn.append(max(source[3]))
-			aux_sn = np.array(aux_sn)
-			SimulatedSourcesTotal.append(aux_sn)
-
-		except:
-			print 'file not working',folder
-		counter += 1
-
-	SimulatedSourcesTotal = np.array(SimulatedSourcesTotal)
-	yTotal = []
-	NSimulations = []
-
-	for sn in bins:
-		N_simulations2 = 1.0*len(SimulatedSourcesTotal)
-		N_detections = 0.0
-		aux = []
-
-		for sim in SimulatedSourcesTotal:
-			if len(sim[sim>=sn])>0:
-				N_detections += 1.0
-			aux.append(len(sim[sim>=sn]))
-		
-		NSimulations.append(np.median(aux))
-		
-		if N_simulations2>0:
-			yTotal.append(N_detections/N_simulations2)
-		else:
-			yTotal.append(-1.0)
-
-	NSimulations = np.array(NSimulations)
-
-	yTotal[yTotal>1] = 1
-	ax1.plot(bins,yTotal,'--',color='green',label='Simulations Total',lw=3)
-
-	bins,ProbPoisson,ProbNegativeOverPositive,PurityPoisson,NPositive,Nnegative,Nnegative_e1,Nnegative_e2,NegativeFitted,NnegativeReal,ProbPoissonE1,ProbPoissonE2,ProbNegativeOverPositiveE1,ProbNegativeOverPositiveE2,ProbNegativeOverPositiveDif,ProbNegativeOverPositiveDifE1,ProbNegativeOverPositiveDifE2,ProbPoissonExpected,ProbPoissonExpectedE1,ProbPoissonExpectedE2 = LineSeekerFunctions.GetPoissonEstimates(bins,SNFinalPos,SNFinalNeg,args.LimitN,args.MinSN)
-	ProbNegativeOverPositive[ProbNegativeOverPositive>1] = 1
-	ProbPoisson[ProbPoisson>1] = 1
-
-	ax1.plot(bins,ProbNegativeOverPositive,'--',color='black',label='#Neg[>=sn]/#Pos[>=sn]',lw=3)
-	ax1.plot(bins,ProbPoisson,'--',color='red',label='Poisson',lw=3)
-	ax1.set_xlabel('S/N',fontsize=20)
-	ax1.set_ylabel('Probability produced by noise ',fontsize=15)
-
-	if args.MaxSigmas<20:
-		ax1.legend(loc='best',fontsize=args.LegendFontSize,ncol=1)
-	else:
-		if args.MaxSigmas<40:
-			ax1.legend(loc='best',fontsize=args.LegendFontSize,ncol=2)
-		else:
-			ax1.legend(loc='best',fontsize=4,ncol=2)
-
-	ax1.tick_params(axis='both', which='major', labelsize=20)
-	ax1.set_ylim(-0.1,1.1)
-	fig1.savefig('ProbabilityFalseSN.pdf')
-
-
-	w, h = 1.0*plt.figaspect(0.9)
-	fig = plt.figure(figsize=(w,h))
-	plt.subplots_adjust(left=0.15, bottom=0.13, right=0.94, top=0.96,wspace=0.10, hspace=0.2)
-	ax1 = plt.subplot(111)
-	plt.semilogy(bins,NPositive,'-',color=cc[0],label='Positive Detections')
-	plt.errorbar(bins[NnegativeReal>0],Nnegative[NnegativeReal>0],yerr=[Nnegative_e1[NnegativeReal>0],Nnegative_e2[NnegativeReal>0]],fmt='o',color=cc[1],label='Negative Detections')
-	plt.semilogy(bins,NegativeFitted,'-',color=cc[2],label='Fitted negative underlying rate',zorder=1)
-	plt.xlabel('S/N',fontsize=20)
-	plt.ylabel('N',fontsize=20)
-	plt.legend(loc=0,fontsize=args.LegendFontSize,ncol=1)
-	plt.tick_params(axis='both', which='major', labelsize=20)
-	plt.ylim(ymin=0.1)
-	plt.grid(True)
-	plt.xticks(np.arange(int(args.MinSN),max(bins)-0.1,1))
-	plt.savefig('NumberPositiveNegativeTotal.pdf')
-
-	w, h = 1.0*plt.figaspect(0.9)
-	fig = plt.figure(figsize=(w,h))
-	plt.subplots_adjust(left=0.15, bottom=0.13, right=0.94, top=0.96,wspace=0.10, hspace=0.2)
-	ax1 = plt.subplot(111)
-
-	AuxPuritySimulation = (NPositive-NSimulations)/NPositive
-	AuxPurityNegatives = (NPositive-NnegativeReal)/NPositive
-	AuxPuritySimulation[AuxPuritySimulation<0] = 0
-	AuxPurityNegatives[AuxPurityNegatives<0] = 0
-	PurityPoisson[PurityPoisson<0] = 0
-	
-	plt.plot(bins,AuxPuritySimulation,'-',color='green',label='Simulations Total',lw=3)
-	plt.plot(bins,AuxPurityNegatives,'-',color='black',label='#(Pos[>=sn] - Neg[>=sn])/#Pos[>=sn]',lw=3)
-	plt.plot(bins,PurityPoisson,'-',color='red',label='Poisson',lw=3)
-	plt.xlabel('S/N',fontsize=20)
-	plt.ylabel('Purity',fontsize=20)
-	plt.legend(loc=0,fontsize=args.LegendFontSize,ncol=1)
-	plt.tick_params(axis='both', which='major', labelsize=20)
-	plt.ylim(-0.1,1.1)
-	plt.savefig('Purity.pdf')
-
-	################################################
-	####  This part is just to write the file ######
-	Output = open('PuritySample.dat','w')
-	Output.write('#S/N PuritySimulations PurityNegative PurityPoisson\n')
-	for i in range(len(bins)):
-		if NPositive[i]>0:
-			Output.write(str(bins[i])+' '+str(max(round((NPositive[i]-NSimulations[i])/NPositive[i],2),0))+' '+str(max(round((NPositive[i]-NnegativeReal[i])/NPositive[i],2),0))+' '+str(round(PurityPoisson[i],2))+'\n')
-		else:
-			Output.write(str(bins[i])+' 0 '+str(round(PurityPoisson[i],2))+'\n')
-
-	Output.close()
-	################################################
-
-
-
-	################################################
-	####  This part is just to write the file ######
-	Output = open('ProbabilityFalse.dat','w')
-	Output.write('#S/N ProbSimulationTotal ProbNegative ProbPoisson\n')
-	# print 'SN neg:'
-	for i in range(len(bins)):
-		Output.write(str(bins[i])+' '+str(round(yTotal[i],2))+' '+str(round(ProbNegativeOverPositive[i],2))+' '+str(round(ProbPoisson[i],2))+'\n')
-
-	Output.close()
-	################################################
-else:
-	print '*** No output from total estimates... ***'
-	if args.MaxSigmas == 1:
-		print '*** Since MaxSigmas is 1 you should consider turning on the option for GetTotalEstimate ... ***'
 
 ######## Positives ########
 
 FinalX,FinalY,FinalChannel,FinalPuritySimulation,FinalPurityNegative,FinalPurityPoisson,FinalSN,FinalPSimultionE1,FinalPSimultionE2,FinalPPoissonE1,FinalPPoissonE2,FinalPuritySimulationE1,FinalPuritySimulationE2,FinalpNegDiv,FinalpNegDivE1,FinalpNegDivE2,FinalpSimExp,FinalpSimExpE1,FinalpSimExpE2,FinalpPoiExp,FinalpPoiExpE1,FinalpPoiExpE2 = LineSeekerFunctions.GetFinalCandidates(SourcesTotalPos,PixelsPerBMAJ)
 
-FinalPuritySimulation = FinalPuritySimulation * FactorLEE
-FinalPurityNegative = FinalPurityNegative * FactorLEE
-FinalPurityPoisson = FinalPurityPoisson * FactorLEE
-FinalPSimultionE1 = FinalPSimultionE1 * FactorLEE
-FinalPSimultionE2 = FinalPSimultionE2 * FactorLEE
-FinalPPoissonE1 = FinalPPoissonE1 * FactorLEE
-FinalPPoissonE2 = FinalPPoissonE2 * FactorLEE
-FinalPuritySimulationE1 = FinalPuritySimulationE1 * FactorLEE
-FinalPuritySimulationE2 = FinalPuritySimulationE2 * FactorLEE
+FinalpSimExpOriginal = FinalpSimExp * 1
+FinalpSimExpE1Original = FinalpSimExpE1 * 1
+FinalpSimExpE2Original = FinalpSimExpE2 * 1
+FinalpPoiExpOriginal = FinalpPoiExp * 1
+FinalpPoiExpE1Original = FinalpPoiExpE1 * 1
+FinalpPoiExpE2Original = FinalpPoiExpE2 * 1
 
-FinalpNegDiv = FinalpNegDiv * FactorLEE
-FinalpNegDivE1 = FinalpNegDivE1 * FactorLEE
-FinalpNegDivE2 = FinalpNegDivE2 * FactorLEE
-FinalpSimExp = FinalpSimExp * FactorLEE
-FinalpSimExpE1 = FinalpSimExpE1 * FactorLEE
-FinalpSimExpE2 = FinalpSimExpE2 * FactorLEE
-FinalpPoiExp = FinalpPoiExp * FactorLEE
-FinalpPoiExpE1 = FinalpPoiExpE1 * FactorLEE
-FinalpPoiExpE2 = FinalpPoiExpE2 * FactorLEE
+if args.UseFactorLEE:
 
-FinalPuritySimulation[FinalPuritySimulation>1.0] = 1.0
-FinalPurityNegative[FinalPurityNegative>1.0] = 1.0
-FinalPurityPoisson[FinalPurityPoisson>1.0] = 1.0
-FinalpNegDiv[FinalpNegDiv>1.0] = 1.0
-FinalpSimExp[FinalpSimExp>1.0] = 1.0
-FinalpPoiExp[FinalpPoiExp>1.0] = 1.0
+	FinalpSimExp = FinalpSimExp * FactorLEE
+	FinalpSimExpE1 = FinalpSimExpE1 * FactorLEE
+	FinalpSimExpE2 = FinalpSimExpE2 * FactorLEE
+	FinalpPoiExp = FinalpPoiExp * FactorLEE
+	FinalpPoiExpE1 = FinalpPoiExpE1 * FactorLEE
+	FinalpPoiExpE2 = FinalpPoiExpE2 * FactorLEE
 
-FinalPSimultionE1[ (FinalPuritySimulation - FinalPSimultionE1) < 0] = FinalPuritySimulation[ (FinalPuritySimulation - FinalPSimultionE1) < 0]
-FinalPPoissonE1[ (FinalPurityPoisson - FinalPPoissonE1) < 0] = FinalPurityPoisson[ (FinalPurityPoisson - FinalPPoissonE1) < 0]
-FinalPuritySimulationE1[ (FinalPurityNegative - FinalPuritySimulationE1) < 0] = FinalPurityNegative[ (FinalPurityNegative - FinalPuritySimulationE1) < 0]
-FinalpNegDivE1[ (FinalpNegDiv - FinalpNegDivE1) < 0] = FinalpNegDiv[ (FinalpNegDiv - FinalpNegDivE1) < 0]
-FinalpSimExpE1[ (FinalpSimExp - FinalpSimExpE1) < 0] = FinalpSimExp[ (FinalpSimExp - FinalpSimExpE1) < 0]
-FinalpPoiExpE1[ (FinalpPoiExp - FinalpPoiExpE1) < 0] = FinalpPoiExp[ (FinalpPoiExp - FinalpPoiExpE1) < 0]
 
-FinalPSimultionE2[ (FinalPuritySimulation + FinalPSimultionE2) > 1] = 1.0 - FinalPuritySimulation[ (FinalPuritySimulation + FinalPSimultionE2) > 1]
-FinalPPoissonE2[ (FinalPurityPoisson + FinalPPoissonE2) > 1] = 1.0 - FinalPurityPoisson[ (FinalPurityPoisson + FinalPPoissonE2) > 1]
-FinalPuritySimulationE2[ (FinalPurityNegative + FinalPuritySimulationE2) > 1] = 1.0 - FinalPurityNegative[ (FinalPurityNegative + FinalPuritySimulationE2) > 1]
-FinalpNegDivE2[ (FinalpNegDiv + FinalpNegDivE2) > 1] = 1.0 - FinalpNegDiv[ (FinalpNegDiv + FinalpNegDivE2) > 1]
-FinalpSimExpE2[ (FinalpSimExp + FinalpSimExpE2) > 1] = 1.0 - FinalpSimExp[ (FinalpSimExp + FinalpSimExpE2) > 1]
-FinalpPoiExpE2[ (FinalpPoiExp + FinalpPoiExpE2) > 1] = 1.0 - FinalpPoiExp[ (FinalpPoiExp + FinalpPoiExpE2) > 1]
+	FinalpSimExp[FinalpSimExp>1.0] = 1.0
+	FinalpPoiExp[FinalpPoiExp>1.0] = 1.0
+
+
+	FinalpSimExpE1[ (FinalpSimExp - FinalpSimExpE1) < 0] = FinalpSimExp[ (FinalpSimExp - FinalpSimExpE1) < 0]
+	FinalpPoiExpE1[ (FinalpPoiExp - FinalpPoiExpE1) < 0] = FinalpPoiExp[ (FinalpPoiExp - FinalpPoiExpE1) < 0]
+
+
+	FinalpSimExpE2[ (FinalpSimExp + FinalpSimExpE2) > 1] = 1.0 - FinalpSimExp[ (FinalpSimExp + FinalpSimExpE2) > 1]
+	FinalpPoiExpE2[ (FinalpPoiExp + FinalpPoiExpE2) > 1] = 1.0 - FinalpPoiExp[ (FinalpPoiExp + FinalpPoiExpE2) > 1]
+
+else:
+	aux1 = FinalpSimExp - FinalpSimExpE1
+	aux2 = FinalpSimExp + FinalpSimExpE2
+	aux1 = 1.0 - (1.0 - aux1)**(args.MaxSigmas)
+	aux2 = 1.0 - (1.0 - aux2)**(args.MaxSigmas)
+	FinalpSimExp = 1.0 - (1.0 - FinalpSimExp)**(args.MaxSigmas)
+	FinalpSimExpE1 = FinalpSimExp - aux1
+	FinalpSimExpE2 = aux2 - FinalpSimExp
+
+	aux1 = FinalpPoiExp - FinalpPoiExpE1
+	aux2 = FinalpPoiExp + FinalpPoiExpE2
+	aux1 = 1.0 - (1.0 - aux1)**(args.MaxSigmas)
+	aux2 = 1.0 - (1.0 - aux2)**(args.MaxSigmas)
+	FinalpPoiExp = 1.0 - (1.0 - FinalpPoiExp)**(args.MaxSigmas)
+	FinalpPoiExpE1 = FinalpPoiExp - aux1
+	FinalpPoiExpE2 = aux2 - FinalpPoiExp
+
+
 
 
 
@@ -638,20 +514,18 @@ for i in range(len(ra)):
   c.append(SkyCoord(ra[i], dec[i], frame='icrs', unit='deg'))
 
 Output = open('LineCandidatesPositive.dat','w')
-Output.write('#ID RA DEC FREQ SN PSim PSimE1 PSimE2 PCumNeg PCumNegE1 PCumNegE2 PPois PPoisE1 PPoisE2 PSimExp PSimExpE1 PSimExpE2 PDifNeg PDifNegE1 PDifNegE2 PPoisExp PPoisExpE1 PPoisExpE2\n')
+Output.write('#ID RA DEC FREQ SN P PE1 PE2 PSim PSimE1 PSimE2 PPesimistic PPesimisticE1 PPesimisticE2 PSimPesimistic PSimPesimisticE1 PSimPesimisticE2\n')
 
 for i in range(len(FinalX)):
   k = i + 1
   i = len(FinalX)-i-1
   
-  Line = args.SurveyName+'-'+args.Wavelength+'mm.'+str(k).zfill(2)+' '+c[i].to_string('hmsdms',sep=':',precision=3).split()[0]+' '
+  Line = args.SurveyName+'_EL.'+str(k).zfill(2)+' '+c[i].to_string('hmsdms',sep=':',precision=3).split()[0]+' '
   Line = Line + c[i].to_string('hmsdms',sep=':',precision=3).split()[1]+' '+str(round(freq[i]/1e9,3)).zfill(3)+' '+str(round(FinalSN[i],1))+' '
-  Line = Line +format(FinalPuritySimulation[i],'.2f') +' '+format(FinalPSimultionE1[i],'.2f')+' '+format(FinalPSimultionE2[i],'.2f')+' '
-  Line = Line + str(round(FinalPurityNegative[i],2))+' '+ str(round(FinalPuritySimulationE1[i],2))+' '+ str(round(FinalPuritySimulationE2[i],2))+' '
-  Line = Line +format(FinalPurityPoisson[i],'.2f')+' '+format(FinalPPoissonE1[i],'.2f')+' '+format(FinalPPoissonE2[i],'.2f')+' '
-  Line = Line +format(FinalpSimExp[i],'.2f')+' '+format(FinalpSimExpE1[i],'.2f')+' '+format(FinalpSimExpE2[i],'.2f')+' '
-  Line = Line +format(FinalpNegDiv[i],'.2f')+' '+format(FinalpNegDivE1[i],'.2f')+' '+format(FinalpNegDivE2[i],'.2f')+' '
-  Line = Line +format(FinalpPoiExp[i],'.2f')+' '+format(FinalpPoiExpE1[i],'.2f')+' '+format(FinalpPoiExpE2[i],'.2f')+'\n'
+  Line = Line +format(FinalpPoiExpOriginal[i],'.2f')+' '+format(FinalpPoiExpE1Original[i],'.2f')+' '+format(FinalpPoiExpE2Original[i],'.2f')+' '  
+  Line = Line +format(FinalpSimExpOriginal[i],'.2f')+' '+format(FinalpSimExpE1Original[i],'.2f')+' '+format(FinalpSimExpE2Original[i],'.2f')+' '
+  Line = Line +format(FinalpPoiExp[i],'.2f')+' '+format(FinalpPoiExpE1[i],'.2f')+' '+format(FinalpPoiExpE2[i],'.2f')+' '  
+  Line = Line +format(FinalpSimExp[i],'.2f')+' '+format(FinalpSimExpE1[i],'.2f')+' '+format(FinalpSimExpE2[i],'.2f')+'\n'
   Output.write(Line)
 
 Output.close()
@@ -661,46 +535,52 @@ Output.close()
 FinalX,FinalY,FinalChannel,FinalPuritySimulation,FinalPurityNegative,FinalPurityPoisson,FinalSN,FinalPSimultionE1,FinalPSimultionE2,FinalPPoissonE1,FinalPPoissonE2,FinalPuritySimulationE1,FinalPuritySimulationE2,FinalpNegDiv,FinalpNegDivE1,FinalpNegDivE2,FinalpSimExp,FinalpSimExpE1,FinalpSimExpE2,FinalpPoiExp,FinalpPoiExpE1,FinalpPoiExpE2 = LineSeekerFunctions.GetFinalCandidates(SourcesTotalNeg,PixelsPerBMAJ)
 
 
-FinalPuritySimulation = FinalPuritySimulation * FactorLEE
-FinalPurityNegative = FinalPurityNegative * FactorLEE
-FinalPurityPoisson = FinalPurityPoisson * FactorLEE
-FinalPSimultionE1 = FinalPSimultionE1 * FactorLEE
-FinalPSimultionE2 = FinalPSimultionE2 * FactorLEE
-FinalPPoissonE1 = FinalPPoissonE1 * FactorLEE
-FinalPPoissonE2 = FinalPPoissonE2 * FactorLEE
-FinalPuritySimulationE1 = FinalPuritySimulationE1 * FactorLEE
-FinalPuritySimulationE2 = FinalPuritySimulationE2 * FactorLEE
+FinalpSimExpOriginal = FinalpSimExp * 1
+FinalpSimExpE1Original = FinalpSimExpE1 * 1
+FinalpSimExpE2Original = FinalpSimExpE2 * 1
+FinalpPoiExpOriginal = FinalpPoiExp * 1
+FinalpPoiExpE1Original = FinalpPoiExpE1 * 1
+FinalpPoiExpE2Original = FinalpPoiExpE2 * 1
 
-FinalpNegDiv = FinalpNegDiv * FactorLEE
-FinalpNegDivE1 = FinalpNegDivE1 * FactorLEE
-FinalpNegDivE2 = FinalpNegDivE2 * FactorLEE
-FinalpSimExp = FinalpSimExp * FactorLEE
-FinalpSimExpE1 = FinalpSimExpE1 * FactorLEE
-FinalpSimExpE2 = FinalpSimExpE2 * FactorLEE
-FinalpPoiExp = FinalpPoiExp * FactorLEE
-FinalpPoiExpE1 = FinalpPoiExpE1 * FactorLEE
-FinalpPoiExpE2 = FinalpPoiExpE2 * FactorLEE
+if args.UseFactorLEE:
 
-FinalPuritySimulation[FinalPuritySimulation>1.0] = 1.0
-FinalPurityNegative[FinalPurityNegative>1.0] = 1.0
-FinalPurityPoisson[FinalPurityPoisson>1.0] = 1.0
-FinalpNegDiv[FinalpNegDiv>1.0] = 1.0
-FinalpSimExp[FinalpSimExp>1.0] = 1.0
-FinalpPoiExp[FinalpPoiExp>1.0] = 1.0
+	FinalpSimExp = FinalpSimExp * FactorLEE
+	FinalpSimExpE1 = FinalpSimExpE1 * FactorLEE
+	FinalpSimExpE2 = FinalpSimExpE2 * FactorLEE
+	FinalpPoiExp = FinalpPoiExp * FactorLEE
+	FinalpPoiExpE1 = FinalpPoiExpE1 * FactorLEE
+	FinalpPoiExpE2 = FinalpPoiExpE2 * FactorLEE
 
-FinalPSimultionE1[ (FinalPuritySimulation - FinalPSimultionE1) < 0] = FinalPuritySimulation[ (FinalPuritySimulation - FinalPSimultionE1) < 0]
-FinalPPoissonE1[ (FinalPurityPoisson - FinalPPoissonE1) < 0] = FinalPurityPoisson[ (FinalPurityPoisson - FinalPPoissonE1) < 0]
-FinalPuritySimulationE1[ (FinalPurityNegative - FinalPuritySimulationE1) < 0] = FinalPurityNegative[ (FinalPurityNegative - FinalPuritySimulationE1) < 0]
-FinalpNegDivE1[ (FinalpNegDiv - FinalpNegDivE1) < 0] = FinalpNegDiv[ (FinalpNegDiv - FinalpNegDivE1) < 0]
-FinalpSimExpE1[ (FinalpSimExp - FinalpSimExpE1) < 0] = FinalpSimExp[ (FinalpSimExp - FinalpSimExpE1) < 0]
-FinalpPoiExpE1[ (FinalpPoiExp - FinalpPoiExpE1) < 0] = FinalpPoiExp[ (FinalpPoiExp - FinalpPoiExpE1) < 0]
 
-FinalPSimultionE2[ (FinalPuritySimulation + FinalPSimultionE2) > 1] = 1.0 - FinalPuritySimulation[ (FinalPuritySimulation + FinalPSimultionE2) > 1]
-FinalPPoissonE2[ (FinalPurityPoisson + FinalPPoissonE2) > 1] = 1.0 - FinalPurityPoisson[ (FinalPurityPoisson + FinalPPoissonE2) > 1]
-FinalPuritySimulationE2[ (FinalPurityNegative + FinalPuritySimulationE2) > 1] = 1.0 - FinalPurityNegative[ (FinalPurityNegative + FinalPuritySimulationE2) > 1]
-FinalpNegDivE2[ (FinalpNegDiv + FinalpNegDivE2) > 1] = 1.0 - FinalpNegDiv[ (FinalpNegDiv + FinalpNegDivE2) > 1]
-FinalpSimExpE2[ (FinalpSimExp + FinalpSimExpE2) > 1] = 1.0 - FinalpSimExp[ (FinalpSimExp + FinalpSimExpE2) > 1]
-FinalpPoiExpE2[ (FinalpPoiExp + FinalpPoiExpE2) > 1] = 1.0 - FinalpPoiExp[ (FinalpPoiExp + FinalpPoiExpE2) > 1]
+	FinalpSimExp[FinalpSimExp>1.0] = 1.0
+	FinalpPoiExp[FinalpPoiExp>1.0] = 1.0
+
+
+	FinalpSimExpE1[ (FinalpSimExp - FinalpSimExpE1) < 0] = FinalpSimExp[ (FinalpSimExp - FinalpSimExpE1) < 0]
+	FinalpPoiExpE1[ (FinalpPoiExp - FinalpPoiExpE1) < 0] = FinalpPoiExp[ (FinalpPoiExp - FinalpPoiExpE1) < 0]
+
+
+	FinalpSimExpE2[ (FinalpSimExp + FinalpSimExpE2) > 1] = 1.0 - FinalpSimExp[ (FinalpSimExp + FinalpSimExpE2) > 1]
+	FinalpPoiExpE2[ (FinalpPoiExp + FinalpPoiExpE2) > 1] = 1.0 - FinalpPoiExp[ (FinalpPoiExp + FinalpPoiExpE2) > 1]
+
+else:
+	aux1 = FinalpSimExp - FinalpSimExpE1
+	aux2 = FinalpSimExp + FinalpSimExpE2
+	aux1 = 1.0 - (1.0 - aux1)**(args.MaxSigmas)
+	aux2 = 1.0 - (1.0 - aux2)**(args.MaxSigmas)
+	FinalpSimExp = 1.0 - (1.0 - FinalpSimExp)**(args.MaxSigmas)
+	FinalpSimExpE1 = FinalpSimExp - aux1
+	FinalpSimExpE2 = aux2 - FinalpSimExp
+
+	aux1 = FinalpPoiExp - FinalpPoiExpE1
+	aux2 = FinalpPoiExp + FinalpPoiExpE2
+	aux1 = 1.0 - (1.0 - aux1)**(args.MaxSigmas)
+	aux2 = 1.0 - (1.0 - aux2)**(args.MaxSigmas)
+	FinalpPoiExp = 1.0 - (1.0 - FinalpPoiExp)**(args.MaxSigmas)
+	FinalpPoiExpE1 = FinalpPoiExp - aux1
+	FinalpPoiExpE2 = aux2 - FinalpPoiExp
+
+
 
 
 
@@ -711,22 +591,21 @@ for i in range(len(ra)):
   c.append(SkyCoord(ra[i], dec[i], frame='icrs', unit='deg'))
 
 Output = open('LineCandidatesNegative.dat','w')
-Output.write('#ID RA DEC FREQ SN PSim PSimE1 PSimE2 PCumNeg PCumNegE1 PCumNegE2 PPois PPoisE1 PPoisE2 PSimExp PSimExpE1 PSimExpE2 PDifNeg PDifNegE1 PDifNegE2 PPoisExp PPoisExpE1 PPoisExpE2\n')
+Output.write('#ID RA DEC FREQ SN P PE1 PE2 PSim PSimE1 PSimE2 PPesimistic PPesimisticE1 PPesimisticE2 PSimPesimistic PSimPesimisticE1 PSimPesimisticE2\n')
 
 for i in range(len(FinalX)):
   k = i + 1
   i = len(FinalX)-i-1
-  Line = args.SurveyName+'-'+args.Wavelength+'mm.Neg'+str(k).zfill(2)+' '+c[i].to_string('hmsdms',sep=':',precision=3).split()[0]+' '
+  
+  Line = args.SurveyName+'_EL.'+str(k).zfill(2)+' '+c[i].to_string('hmsdms',sep=':',precision=3).split()[0]+' '
   Line = Line + c[i].to_string('hmsdms',sep=':',precision=3).split()[1]+' '+str(round(freq[i]/1e9,3)).zfill(3)+' '+str(round(FinalSN[i],1))+' '
-  Line = Line +format(FinalPuritySimulation[i],'.2f') +' '+format(FinalPSimultionE1[i],'.2f')+' '+format(FinalPSimultionE2[i],'.2f')+' '
-  Line = Line + str(round(FinalPurityNegative[i],2))+' '+ str(round(FinalPuritySimulationE1[i],2))+' '+ str(round(FinalPuritySimulationE2[i],2))+' '
-  Line = Line +format(FinalPurityPoisson[i],'.2f')+' '+format(FinalPPoissonE1[i],'.2f')+' '+format(FinalPPoissonE2[i],'.2f')+' '
-  Line = Line +format(FinalpSimExp[i],'.2f')+' '+format(FinalpSimExpE1[i],'.2f')+' '+format(FinalpSimExpE2[i],'.2f')+' '
-  Line = Line +format(FinalpNegDiv[i],'.2f')+' '+format(FinalpNegDivE1[i],'.2f')+' '+format(FinalpNegDivE2[i],'.2f')+' '
-  Line = Line +format(FinalpPoiExp[i],'.2f')+' '+format(FinalpPoiExpE1[i],'.2f')+' '+format(FinalpPoiExpE2[i],'.2f')+'\n'
+  Line = Line +format(FinalpPoiExpOriginal[i],'.2f')+' '+format(FinalpPoiExpE1Original[i],'.2f')+' '+format(FinalpPoiExpE2Original[i],'.2f')+' '  
+  Line = Line +format(FinalpSimExpOriginal[i],'.2f')+' '+format(FinalpSimExpE1Original[i],'.2f')+' '+format(FinalpSimExpE2Original[i],'.2f')+' '
+  Line = Line +format(FinalpPoiExp[i],'.2f')+' '+format(FinalpPoiExpE1[i],'.2f')+' '+format(FinalpPoiExpE2[i],'.2f')+' '  
+  Line = Line +format(FinalpSimExp[i],'.2f')+' '+format(FinalpSimExpE1[i],'.2f')+' '+format(FinalpSimExpE2[i],'.2f')+'\n' 
   Output.write(Line)
 
 Output.close()
 
-print 'EPS used in DBSCAN:',PixelsPerBMAJ
+print('EPS used in DBSCAN:',PixelsPerBMAJ)
 

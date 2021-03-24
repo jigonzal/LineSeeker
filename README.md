@@ -1,7 +1,7 @@
 # LineSeeker
 Python Codes that search for emission line candidates in ALMA data cubes
 
-Work in progress...
+Work in progress... updated to Python 3
 
 Please contact Jorge González-López at jorge.gonzalezl@mail.udp.cl for comments an questions.
 

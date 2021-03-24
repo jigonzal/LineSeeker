@@ -97,7 +97,9 @@ In this case I would repeat the search using MinSN=2.7 in order to add a couple 
 These are cumulative histograms with the negative lines (orange points), positive lines (green points) and the fit to the negative data (blue line). 
 
 NumberPositiveNegative_0.pdf shows how in the low end of SN, the histogram can start departing from the assumed function. This is produced because some low SN lines can be missed. 
+
 NumberPositiveNegative_7.pdf shows how the data can miss behave. Here we see an "excess" of positive and negative lines with SN>4 with respect to the fitted function. This will produce an overestimate of the significance of some lines. In this case I would also run the simulations just to be sure the lines are reliable. 
+
 NumberPositiveNegative_29.pdf shows how when convolving several channels, the data is better behave and the fitted function better follows the negative lines. 
 
 If you see that the plots fail to show the points or the orange points are too different from the fitted function, then try and changing some parameters such as:

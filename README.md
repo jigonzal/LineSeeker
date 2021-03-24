@@ -56,7 +56,7 @@ Here I am using the same parameters as for SearchLine.py but can be changed.
 The output in the terminal for GetLineCandidates.py is very important, some warning from python can and will appear. 
 
 What is important is this:
-
+'''
 --------------------------------------------------
 for sigma 1
 S/N NDetected Fraction Nsimulations ExpectedNumberPerCube Error
@@ -70,7 +70,7 @@ Min SN to do the fit: 3.5 , Number of usable bins: 8
 Min SN to do the fit: 3.6 , Number of usable bins: 7
 Min SN to do the fit: 3.7 , Number of usable bins: 6
 --------------------------------------------------
-
+'''
 This will appear for each of the convolutions used in the search, 31 in this case. Here I'm showing the one for n=1. The code will try to use a SN cut so that it has at least six bins with more than 20 (default number) negative line candidates. I do this to have a good reference for the negative data without suffering from incomplete sampling of low SN negative lines. 
 
 - The most important parameter to pay attention is MinSN. If we use a value to high then we will not have the six bins with more than 20 negative line candidates. If we use a value too low, then the clustering algorithm will start blending the lines. If not enough bins, the script will print a message. I think it is safe to have at least 3-4 bins for the fit of the negative counts. If the bins go below that, the script tries to force the fitting. 

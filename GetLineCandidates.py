@@ -187,8 +187,8 @@ ax1 = fig1.add_subplot(111)
 
 for i in range(args.MaxSigmas):
 	print(50*'-')
-	Sources_real = np.array(LineSeekerFunctions.GetSourcesFromFiles([args.LineSearchPath+'/line_dandidates_sn_sigmas'+str(i)+'_pos'],args.MinSN,PixelsPerBMAJ))
-	Sources_realNeg = np.array(LineSeekerFunctions.GetSourcesFromFiles([args.LineSearchPath+'/line_dandidates_sn_sigmas'+str(i)+'_neg'],args.MinSN,PixelsPerBMAJ))
+	Sources_real = LineSeekerFunctions.GetSourcesFromFiles([args.LineSearchPath+'/line_dandidates_sn_sigmas'+str(i)+'_pos'],args.MinSN,PixelsPerBMAJ)
+	Sources_realNeg = LineSeekerFunctions.GetSourcesFromFiles([args.LineSearchPath+'/line_dandidates_sn_sigmas'+str(i)+'_neg'],args.MinSN,PixelsPerBMAJ)
 
 	simulations_folders = glob.glob(args.SimulationPath+'/simul_*')
 	SimulatedSources = []
@@ -271,6 +271,9 @@ for i in range(args.MaxSigmas):
 	if i>=14:
 		ax1.plot(bins,y,':',label=r' $\sigma$ = '+str(i)+' channels')
 
+
+	Sources_real = np.array(Sources_real,dtype='object')
+	Sources_realNeg = np.array(Sources_realNeg,dtype='object')
 
 	Sources_real = Sources_real[np.argsort(SNReal)][::-1]
 	SNReal = SNReal[np.argsort(SNReal)][::-1]

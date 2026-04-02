@@ -281,10 +281,15 @@ for i in range(args.MaxSigmas):
 	SNRealNeg = SNRealNeg[np.argsort(SNRealNeg)][::-1]
 
 	# print type(SNReal),type(SNReal[0]),SNReal
-	SNReal = 1.0*np.around(SNReal,1)
-	SNRealNeg = 1.0*np.around(SNRealNeg,1)
-	SNReal = SNReal.astype(np.float32)
-	SNRealNeg = SNRealNeg.astype(np.float32)
+	# SNReal = 1.0*np.around(SNReal,1)
+	# SNRealNeg = 1.0*np.around(SNRealNeg,1)
+	# SNReal = SNReal.astype(np.float32)
+	# SNRealNeg = SNRealNeg.astype(np.float32)
+
+	sn_real = np.rint(SNReal * 10.0).astype(np.int32)
+	SNReal = sn_real.astype(np.float64) / 10.0
+	sn_realneg = np.rint(SNRealNeg * 10.0).astype(np.int32)
+	SNRealNeg = sn_realneg.astype(np.float64) / 10.0	
 
 
 	bins,ProbPoisson,ProbNegativeOverPositive,PurityPoisson,NPositive,Nnegative,Nnegative_e1,Nnegative_e2,NegativeFitted,NnegativeReal,ProbPoissonE1,ProbPoissonE2,ProbNegativeOverPositiveE1,ProbNegativeOverPositiveE2,ProbNegativeOverPositiveDif,ProbNegativeOverPositiveDifE1,ProbNegativeOverPositiveDifE2,ProbPoissonExpected,ProbPoissonExpectedE1,ProbPoissonExpectedE2 = LineSeekerFunctions.GetPoissonEstimates(bins,SNReal,SNRealNeg,args.LimitN,args.MinSN)

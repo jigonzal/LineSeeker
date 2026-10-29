@@ -45,6 +45,7 @@ def main():
     parser.add_argument('-Cube', type=str, required=True,help = 'Path to the Cube fits file where the search will be done')
     parser.add_argument('-OutputPath', type=str, default='OutputLineSearch', required=False , help = 'Directory where the outputs will be saved, if exists the codes finished, otherwise will be created [Default:OutputLineSearch]')
     parser.add_argument('-MinSN', type=float, default = 5.0, required=False,help = 'Minimum S/N value to save in the outputs. A good value depends on each data cube, reasonable values are bettween 3.5 and 6 [Default:5.0]')
+    parser.add_argument('-MinSigmas', type=int, default = 0, required=False,help = 'Minimum number of channels to use as sigma value for the spectral Gaussian convolution. [Default:10]')
     parser.add_argument('-MaxSigmas', type=int, default = 10, required=False,help = 'Maximum number of channels to use as sigma value for the spectral Gaussian convolution. [Default:10]')
     parser.add_argument('-ContinuumImage', type=str, default = 'Continuum.fits', required=False,help = 'Continuum image to use to create a mask. [Default:Continuum.fits]')
     parser.add_argument('-MaskSN', type=float, default = 5.0, required=False,help = 'S/N value to use as limit to create mask from continuum image. [Default:5.0]')
@@ -108,26 +109,27 @@ def main():
         print('*** Using Tophat Kernel ***')
 
 
-    #finding channel width
-    Header = fits.open(args.Cube)[0].header
-    RefFrequency = Header['CRVAL3']
-    ChannelSpacing = Header['CDELT3']
-    ApproxChannelVelocityWidth = (abs(ChannelSpacing)/RefFrequency)*3e5
-    ApproxMaxSigmas = int((1000.0/ApproxChannelVelocityWidth)/2.35) + 1
+    if args.MaxSigmas > 1:
+    #finding channel width (only for cube, skip for continuum when MaxSigmas=1)
+        Header = fits.open(args.Cube)[0].header
+        RefFrequency = Header['CRVAL3']
+        ChannelSpacing = Header['CDELT3']
+        ApproxChannelVelocityWidth = (abs(ChannelSpacing)/RefFrequency)*3e5
+        ApproxMaxSigmas = int((1000.0/ApproxChannelVelocityWidth)/2.35) + 1
 
-    if args.Kernel=='Gaussian' or args.Kernel=='gaussian':
-        print('*** MaxSigmas should be of the order of ',ApproxMaxSigmas,'to detect a line width FWHM ~ 1000 km/s ***')
-    else:
-        ApproxMaxSigmas = int ((1000.0/ApproxChannelVelocityWidth))+1
-        print('*** MaxSigmas should be of the order of ',ApproxMaxSigmas,'to detect a line width of ~ 1000 km/s for the Tophat Kernel (considering the reference frequency CRVAL3)***')
-    
+        if args.Kernel=='Gaussian' or args.Kernel=='gaussian':
+            print('*** MaxSigmas should be of the order of ',ApproxMaxSigmas,'to detect a line width FWHM ~ 1000 km/s ***')
+        else:
+            ApproxMaxSigmas = int ((1000.0/ApproxChannelVelocityWidth))+1
+            print('*** MaxSigmas should be of the order of ',ApproxMaxSigmas,'to detect a line width of ~ 1000 km/s for the Tophat Kernel (considering the reference frequency CRVAL3)***')
+
     try:
         LineSeekerFunctions.GetMinSNEstimate(args.Cube)
     except:
         print('*** problems reading header ***')
         
     # Main loop to do the search
-    for sigmas in range(args.MaxSigmas):
+    for sigmas in range(args.MinSigmas, args.MaxSigmas):
         LineSeekerFunctions.SearchLine(args.Cube,args.OutputPath,args.MinSN,sigmas,UseMask,args.ContinuumImage,args.MaskSN,args.Kernel)
 
 main()

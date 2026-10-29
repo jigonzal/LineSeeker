@@ -123,6 +123,14 @@ Changed the naming scheme for the candidates.
 
 Added the creation of a file with the parameters used. I addded this so I could try to automatize the search. 
 ---------------------------------------------------------------------------------------------
+v2.1
+Author: Leindert Boogaard
+
+Add support for cubes without stokes axes
+Save kernel of highest S/N template in output catalog
+Ensure a stable argsort
+Fixed some warnings related to python>3 and numpy>2
+
 '''
 
 
@@ -130,6 +138,7 @@ parser = argparse.ArgumentParser(description="Python script that finds line emis
 parser.add_argument('-Cube', type=str, required=True,help = 'Path to the Cube fits file where the search will be done')
 parser.add_argument('-LineSearchPath', type=str, default='OutputLineSearch', required=False , help = 'Directory where the outputs will be saved [Default:LineSearchPath]')
 parser.add_argument('-SimulationPath', type=str, default='Simulation', required=False , help = 'Directory where the simulations should be found [Default:Simulation]')
+parser.add_argument('-MinSigmas', type=int, default = 0, required=False,help = 'Minimum number of channels to use as sigma value for the spectral Gaussian convolution. [Default:10]')
 parser.add_argument('-MaxSigmas', type=int, default = 10, required=False,help = 'Maximum number of channels to use as sigma value for the spectral Gaussian convolution. [Default:10]')
 parser.add_argument('-MinSN', type=float, default = 5.0, required=False,help = 'Minimum S/N value to save in the outputs. A good value depends on each data cube, reasonable values are bettween 3.5 and 6 [Default:5.0]')
 parser.add_argument('-SurveyName', type=str, default='Survey', required=False , help = 'Name to identify the line candidates [Default:Survey]')
@@ -138,6 +147,7 @@ parser.add_argument('-LegendFontSize', type=float, default='10.0', required=Fals
 parser.add_argument('-UserEPS', type=str, default='False',choices=['True','False'], required=False , help = 'Whether to use EPS value entered from user otherwise use number of pixels per bmaj [Default:False]')
 parser.add_argument('-EPS', type=float, default=5.0, required=False , help = 'EPS value to use if User sets -UserEPS to True [Default:5.0]')
 parser.add_argument('-UseFactorLEE', type=str, default='False',choices=['True','False'], required=False , help = 'Whether to correct by the Look-Elsewhere effect using only a factor (1 + (ln(MaxSigmas -1) + 1/(2*(MaxSigmas -1))) + 0.577) [Default:False]')
+parser.add_argument('-NoStokes', action='store_true', required=False, help = 'Trigger this flag if the cube has no stokes axis')
 
 args = parser.parse_args()
 
@@ -162,8 +172,9 @@ else:
 
 if args.UserEPS=='False':
 	PixelsPerBMAJ = LineSeekerFunctions.GetPixelsPerBMAJ(args.Cube)
-	if args.MaxSigmas == 1:
-		PixelsPerBMAJ = 1.0
+        ####LAB: I don't understand why you would set EPS=1 when searching a continuum image?
+	# if args.MaxSigmas == 1:
+	# 	PixelsPerBMAJ = 1.0
 	print('*** Using EPS value of '+str(PixelsPerBMAJ)+'***')
 else:
 	PixelsPerBMAJ = args.EPS
@@ -185,10 +196,10 @@ fig1 = plt.figure(figsize=(w,h))
 fig1.subplots_adjust(left=0.15, bottom=0.13, right=0.94, top=0.96,wspace=0.10, hspace=0.2)
 ax1 = fig1.add_subplot(111)
 
-for i in range(args.MaxSigmas):
+for i in range(args.MinSigmas, args.MaxSigmas):
 	print(50*'-')
-	Sources_real = LineSeekerFunctions.GetSourcesFromFiles([args.LineSearchPath+'/line_dandidates_sn_sigmas'+str(i)+'_pos'],args.MinSN,PixelsPerBMAJ)
-	Sources_realNeg = LineSeekerFunctions.GetSourcesFromFiles([args.LineSearchPath+'/line_dandidates_sn_sigmas'+str(i)+'_neg'],args.MinSN,PixelsPerBMAJ)
+	Sources_real = np.array(LineSeekerFunctions.GetSourcesFromFiles([args.LineSearchPath+'/line_dandidates_sn_sigmas'+str(i)+'_pos'],args.MinSN,PixelsPerBMAJ), dtype=object)
+	Sources_realNeg = np.array(LineSeekerFunctions.GetSourcesFromFiles([args.LineSearchPath+'/line_dandidates_sn_sigmas'+str(i)+'_neg'],args.MinSN,PixelsPerBMAJ), dtype=object)
 
 	simulations_folders = glob.glob(args.SimulationPath+'/simul_*')
 	SimulatedSources = []
@@ -275,10 +286,12 @@ for i in range(args.MaxSigmas):
 	Sources_real = np.array(Sources_real,dtype='object')
 	Sources_realNeg = np.array(Sources_realNeg,dtype='object')
 
-	Sources_real = Sources_real[np.argsort(SNReal)][::-1]
-	SNReal = SNReal[np.argsort(SNReal)][::-1]
-	Sources_realNeg = Sources_realNeg[np.argsort(SNRealNeg)][::-1]
-	SNRealNeg = SNRealNeg[np.argsort(SNRealNeg)][::-1]
+	argsort_snreal = np.argsort(SNReal)
+	Sources_real = Sources_real[argsort_snreal][::-1]
+	SNReal = SNReal[argsort_snreal][::-1]
+	argsort_snrealneg = np.argsort(SNRealNeg)
+	Sources_realNeg = Sources_realNeg[argsort_snrealneg][::-1]
+	SNRealNeg = SNRealNeg[argsort_snrealneg][::-1]
 
 	# print type(SNReal),type(SNReal[0]),SNReal
 	# SNReal = 1.0*np.around(SNReal,1)
@@ -386,7 +399,8 @@ for i in range(args.MaxSigmas):
 							PSimulationExpectedTotalE2Real,
 							PPoissonExpectedTotalReal,
 							PPoissonExpectedTotalE1Real,
-							PPoissonExpectedTotalE2Real
+							PPoissonExpectedTotalE2Real,
+                                                        i
 						]
 			SourcesTotalPos.append(NewSource)
 
@@ -451,7 +465,8 @@ for i in range(args.MaxSigmas):
 							PSimulationExpectedTotalE2Real,
 							PPoissonExpectedTotalReal,
 							PPoissonExpectedTotalE1Real,
-							PPoissonExpectedTotalE2Real
+							PPoissonExpectedTotalE2Real,
+                                                        i
 						]
 			SourcesTotalNeg.append(NewSource)
 
@@ -462,7 +477,7 @@ SNFinalNeg = LineSeekerFunctions.GetFinalSN(SourcesTotalNeg,PixelsPerBMAJ)
 
 ######## Positives ########
 
-FinalX,FinalY,FinalChannel,FinalPuritySimulation,FinalPurityNegative,FinalPurityPoisson,FinalSN,FinalPSimultionE1,FinalPSimultionE2,FinalPPoissonE1,FinalPPoissonE2,FinalPuritySimulationE1,FinalPuritySimulationE2,FinalpNegDiv,FinalpNegDivE1,FinalpNegDivE2,FinalpSimExp,FinalpSimExpE1,FinalpSimExpE2,FinalpPoiExp,FinalpPoiExpE1,FinalpPoiExpE2 = LineSeekerFunctions.GetFinalCandidates(SourcesTotalPos,PixelsPerBMAJ)
+FinalX,FinalY,FinalChannel,FinalPuritySimulation,FinalPurityNegative,FinalPurityPoisson,FinalSN,FinalPSimultionE1,FinalPSimultionE2,FinalPPoissonE1,FinalPPoissonE2,FinalPuritySimulationE1,FinalPuritySimulationE2,FinalpNegDiv,FinalpNegDivE1,FinalpNegDivE2,FinalpSimExp,FinalpSimExpE1,FinalpSimExpE2,FinalpPoiExp,FinalpPoiExpE1,FinalpPoiExpE2,Kernel = LineSeekerFunctions.GetFinalCandidates(SourcesTotalPos,PixelsPerBMAJ)
 
 FinalpSimExpOriginal = FinalpSimExp * 1
 FinalpSimExpE1Original = FinalpSimExpE1 * 1
@@ -516,13 +531,16 @@ else:
 hdulist =   fits.open(args.Cube,memmap=True)
 w = wcs.WCS(hdulist[0].header)
 
-[ra,dec,freq,stoke] =  w.all_pix2world(FinalX,FinalY,FinalChannel,np.zeros_like(FinalChannel),0)
+if args.NoStokes:
+        [ra,dec,freq] =  w.all_pix2world(FinalX,FinalY,FinalChannel,0)
+else:
+        [ra,dec,freq,stoke] =  w.all_pix2world(FinalX,FinalY,FinalChannel,np.zeros_like(FinalChannel),0)
 c = []
 for i in range(len(ra)):
   c.append(SkyCoord(ra[i], dec[i], frame='icrs', unit='deg'))
 
 Output = open('LineCandidatesPositive.dat','w')
-Output.write('#ID RA DEC FREQ SN P PE1 PE2 PSim PSimE1 PSimE2 PPesimistic PPesimisticE1 PPesimisticE2 PSimPesimistic PSimPesimisticE1 PSimPesimisticE2\n')
+Output.write('#ID RA DEC FREQ SN P PE1 PE2 PSim PSimE1 PSimE2 PPesimistic PPesimisticE1 PPesimisticE2 PSimPesimistic PSimPesimisticE1 PSimPesimisticE2 Kernel\n')
 
 for i in range(len(FinalX)):
   k = i + 1
@@ -533,14 +551,15 @@ for i in range(len(FinalX)):
   Line = Line +format(FinalpPoiExpOriginal[i],'.2f')+' '+format(FinalpPoiExpE1Original[i],'.2f')+' '+format(FinalpPoiExpE2Original[i],'.2f')+' '  
   Line = Line +format(FinalpSimExpOriginal[i],'.2f')+' '+format(FinalpSimExpE1Original[i],'.2f')+' '+format(FinalpSimExpE2Original[i],'.2f')+' '
   Line = Line +format(FinalpPoiExp[i],'.2f')+' '+format(FinalpPoiExpE1[i],'.2f')+' '+format(FinalpPoiExpE2[i],'.2f')+' '  
-  Line = Line +format(FinalpSimExp[i],'.2f')+' '+format(FinalpSimExpE1[i],'.2f')+' '+format(FinalpSimExpE2[i],'.2f')+'\n'
+  Line = Line +format(FinalpSimExp[i],'.2f')+' '+format(FinalpSimExpE1[i],'.2f')+' '+format(FinalpSimExpE2[i],'.2f')+' '
+  Line = Line +format(Kernel[i])+'\n'
   Output.write(Line)
 
 Output.close()
 
 
 ######## Negatives ########
-FinalX,FinalY,FinalChannel,FinalPuritySimulation,FinalPurityNegative,FinalPurityPoisson,FinalSN,FinalPSimultionE1,FinalPSimultionE2,FinalPPoissonE1,FinalPPoissonE2,FinalPuritySimulationE1,FinalPuritySimulationE2,FinalpNegDiv,FinalpNegDivE1,FinalpNegDivE2,FinalpSimExp,FinalpSimExpE1,FinalpSimExpE2,FinalpPoiExp,FinalpPoiExpE1,FinalpPoiExpE2 = LineSeekerFunctions.GetFinalCandidates(SourcesTotalNeg,PixelsPerBMAJ)
+FinalX,FinalY,FinalChannel,FinalPuritySimulation,FinalPurityNegative,FinalPurityPoisson,FinalSN,FinalPSimultionE1,FinalPSimultionE2,FinalPPoissonE1,FinalPPoissonE2,FinalPuritySimulationE1,FinalPuritySimulationE2,FinalpNegDiv,FinalpNegDivE1,FinalpNegDivE2,FinalpSimExp,FinalpSimExpE1,FinalpSimExpE2,FinalpPoiExp,FinalpPoiExpE1,FinalpPoiExpE2,Kernel = LineSeekerFunctions.GetFinalCandidates(SourcesTotalNeg,PixelsPerBMAJ)
 
 
 FinalpSimExpOriginal = FinalpSimExp * 1
@@ -592,14 +611,16 @@ else:
 
 
 
-
-[ra,dec,freq,stoke] =  w.all_pix2world(FinalX,FinalY,FinalChannel,np.zeros_like(FinalChannel),0)
+if args.NoStokes:
+        [ra,dec,freq] =  w.all_pix2world(FinalX,FinalY,FinalChannel,0)
+else:
+        [ra,dec,freq,stoke] =  w.all_pix2world(FinalX,FinalY,FinalChannel,np.zeros_like(FinalChannel),0)
 c = []
 for i in range(len(ra)):
   c.append(SkyCoord(ra[i], dec[i], frame='icrs', unit='deg'))
 
 Output = open('LineCandidatesNegative.dat','w')
-Output.write('#ID RA DEC FREQ SN P PE1 PE2 PSim PSimE1 PSimE2 PPesimistic PPesimisticE1 PPesimisticE2 PSimPesimistic PSimPesimisticE1 PSimPesimisticE2\n')
+Output.write('#ID RA DEC FREQ SN P PE1 PE2 PSim PSimE1 PSimE2 PPesimistic PPesimisticE1 PPesimisticE2 PSimPesimistic PSimPesimisticE1 PSimPesimisticE2 Kernel\n')
 
 for i in range(len(FinalX)):
   k = i + 1
@@ -610,7 +631,8 @@ for i in range(len(FinalX)):
   Line = Line +format(FinalpPoiExpOriginal[i],'.2f')+' '+format(FinalpPoiExpE1Original[i],'.2f')+' '+format(FinalpPoiExpE2Original[i],'.2f')+' '  
   Line = Line +format(FinalpSimExpOriginal[i],'.2f')+' '+format(FinalpSimExpE1Original[i],'.2f')+' '+format(FinalpSimExpE2Original[i],'.2f')+' '
   Line = Line +format(FinalpPoiExp[i],'.2f')+' '+format(FinalpPoiExpE1[i],'.2f')+' '+format(FinalpPoiExpE2[i],'.2f')+' '  
-  Line = Line +format(FinalpSimExp[i],'.2f')+' '+format(FinalpSimExpE1[i],'.2f')+' '+format(FinalpSimExpE2[i],'.2f')+'\n' 
+  Line = Line +format(FinalpSimExp[i],'.2f')+' '+format(FinalpSimExpE1[i],'.2f')+' '+format(FinalpSimExpE2[i],'.2f')+' '
+  Line = Line +format(Kernel[i])+'\n'
   Output.write(Line)
 
 Output.close()

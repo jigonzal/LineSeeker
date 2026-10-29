@@ -79,13 +79,15 @@ def main():
     parser.add_argument('-Cube', type=str, required=True,help = 'Path to the Cube fits file where the search will be done')
     parser.add_argument('-OutputPath', type=str, default='Simulation', required=False , help = 'Directory where the outputs will be saved, if exists the codes finished, otherwise will be created [Default:Simulation]')
     parser.add_argument('-MinSN', type=float, default = 5.0, required=False,help = 'Minimum S/N value to save in the outputs. A good value depends on each data cube, reasonable values are bettween 3.5 and 6 [Default:5.0]')
+    parser.add_argument('-MinSigmas', type=int, default = 0, required=False,help = 'Minimum number of channels to use as sigma value for the spectral Gaussian convolution. [Default:10]')    
     parser.add_argument('-MaxSigmas', type=int, default = 10, required=False,help = 'Maximum number of channels to use as sigma value for the spectral Gaussian convolution. [Default:10]')
     parser.add_argument('-ContinuumImage', type=str, default = 'Continuum.fits', required=False,help = 'Continuum image to use to create a mask. [Default:Continuum.fits]')
     parser.add_argument('-MaskSN', type=float, default = 5.0, required=False,help = 'S/N value to use as limit to create mask from continuum image. [Default:5.0]')
     parser.add_argument('-UseMask', type=str, default = 'False',choices=['True','False'], required=False,help = 'S/N value to use as limit to create mask from continuum image. [Default:5.0]')
     parser.add_argument('-Kernel', type=str, default = 'Gaussian',choices=['Gaussian','gaussian','Tophat','tophat'], required=False,help = 'Type of kernel to use for the convolution. [Default:Gaussian]')
     parser.add_argument('-NSimulations', type=int, default = 50, required=False,help = 'Number of cubes to be simulated . [Default:50]')
- 
+    parser.add_argument('-NoStokes', action='store_true', required=False, help = 'Trigger this flag if the cube has no stokes axis')
+
     args = parser.parse_args()
 
     #Checking input arguments
@@ -160,11 +162,11 @@ def main():
 
     for SimulationIndex in range(args.NSimulations):
         print('*** Cube: '+str(SimulationIndex+1)+'/'+str(args.NSimulations)+' ***')
-        LineSeekerFunctions.SimulateCube(args.Cube)
+        LineSeekerFunctions.SimulateCube(args.Cube, args.NoStokes)
         os.mkdir(args.OutputPath+'/simul_'+str(SimulationIndex))
         NewPathOutput = args.OutputPath+'/simul_'+str(SimulationIndex)
         # Main loop to do the search
-        for sigmas in range(args.MaxSigmas):
+        for sigmas in range(args.MinSigmas, args.MaxSigmas):
             LineSeekerFunctions.SearchLine('SimulatedCube.fits',NewPathOutput,args.MinSN,sigmas,UseMask,args.ContinuumImage,args.MaskSN,args.Kernel)
 
 main()
